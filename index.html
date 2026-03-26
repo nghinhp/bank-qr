@@ -78,6 +78,12 @@
         .btn-success:hover { background: #059669; }
         .btn-text { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 15px; font-weight: 500; margin-top: 20px; cursor: pointer; }
 
+        .btn-copy {
+            padding: 0 20px; background: #e5e7eb; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 600; color: var(--text-main); cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+
         .instruction-box { background: #f3f4f6; padding: 24px; border-radius: 12px; text-align: left; font-size: 15px; font-weight: 500; color: var(--text-main); line-height: 1.6; }
 
         #favAccountGroup { background: var(--highlight-bg); padding: 16px; border-radius: 12px; border: 1px dashed #93c5fd; margin-bottom: 24px; }
@@ -124,7 +130,6 @@
             </div>
 
             <div id="manual-bank-info" style="display:none;">
-                <!-- Dành cho Tài khoản yêu thích -->
                 <div class="form-group" id="favAccountGroup" style="display:none;">
                     <label>Favorite Account</label>
                     <select id="favAccountSelect" onchange="applyFavAccount()">
@@ -156,9 +161,10 @@
 
             <h3 class="section-title">Accounting Details</h3>
             
+            <!-- UPDATE: From Bank thành Select -->
             <div class="form-group">
                 <label>From Bank</label>
-                <input type="text" id="fromBank" placeholder="e.g., VCB, TCB">
+                <select id="fromBank"></select>
             </div>
 
             <div class="form-group">
@@ -176,9 +182,13 @@
                 <select id="categorySelect" onchange="updateAccountingMemo()"></select>
             </div>
 
+            <!-- UPDATE: Thêm Flexbox và nút Copy -->
             <div class="form-group">
                 <label>Internal Accounting Code</label>
-                <input type="text" id="accountingMemo" readonly style="background: var(--bg-color); color: var(--text-muted);">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="accountingMemo" readonly style="background: var(--bg-color); color: var(--text-muted); flex: 1;">
+                    <button type="button" id="btnCopyMemo" class="btn-copy" onclick="copyAccountingMemo()">Copy</button>
+                </div>
             </div>
 
             <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
@@ -258,11 +268,11 @@
         function loadCategories() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
+                fill('fromBank', data.fromBanks || [], "Select Source Bank");
                 fill('vendorSelect', data.vendors, "Select Vendor");
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
                 
-                // Nạp danh sách Favorite Account
                 if (data.favAccounts && data.favAccounts.length > 0) {
                     let favSelect = document.getElementById('favAccountSelect');
                     data.favAccounts.forEach(acc => {
@@ -284,7 +294,6 @@
             list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
         }
 
-        // Tự động điền mã ngân hàng và số tài khoản khi chọn từ list
         function applyFavAccount() {
             let val = document.getElementById('favAccountSelect').value;
             if (val) {
@@ -301,6 +310,25 @@
             let d = new Date();
             let date = d.getFullYear().toString().slice(-2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
             document.getElementById('accountingMemo').value = `${v}_${u}_${c}_${date}`;
+        }
+
+        // HÀM MỚI: Copy mã hạch toán
+        function copyAccountingMemo() {
+            let copyText = document.getElementById("accountingMemo");
+            let btn = document.getElementById("btnCopyMemo");
+            
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                btn.innerText = "Copied!";
+                btn.style.background = "var(--success-color)";
+                btn.style.color = "white";
+                setTimeout(() => {
+                    btn.innerText = "Copy";
+                    btn.style.background = "#e5e7eb";
+                    btn.style.color = "var(--text-main)";
+                }, 2000);
+            }).catch(err => {
+                alert("Không thể copy: " + err);
+            });
         }
 
         function processAll() {
