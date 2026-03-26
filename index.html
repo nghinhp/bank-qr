@@ -150,12 +150,11 @@
             <div class="form-group">
                 <label>Open Banking App</label>
                 <select id="appSelect">
-                    <option value="vcbdigibank://">Vietcombank</option>
-                    <option value="momo://">MoMo</option>
-                    <option value="zalopay://">ZaloPay</option>
-                    <option value="mbmobile://">MB Bank</option>
-                    <option value="tcbmobile://">Techcombank</option>
                     <option value="none">Do not open app</option>
+                    <option value="techcombank://">Techcombank</option>
+                    <option value="acb://">ACB</option>
+                    <option value="sacombank://">Sacombank</option>
+
                 </select>
             </div>
 
@@ -197,11 +196,6 @@
 
         <div id="result-container" class="container" style="text-align:center;">
             <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Completed!</h3>
-            <div class="instruction-box">
-                1. Long press the QR code and select <b>"Save Image"</b><br><br>
-                2. Tap the green button to open your Banking App<br><br>
-                3. Choose <b>"Scan QR"</b> in the app -> select the saved image.
-            </div>
             <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
             <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
             <button class="btn-text" onclick="location.reload()">Scan New QR</button>
