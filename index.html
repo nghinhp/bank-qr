@@ -1,195 +1,255 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THANH TOÁN SIÊU TỐC</title>
+    <title>QUICK PAYMENT</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        /* Minimalist Theme */
         :root {
-            --primary-color: #0066ff;
-            --bg-color: #ffffff;
-            --input-bg: #f9f9f9;
+            --primary-color: #111827; /* Dark minimalist */
+            --bg-color: #f7f7f8;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --focus-ring: #3b82f6;
+            --success-color: #10b981;
         }
 
         body { 
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; padding: 10px; margin: 0; background-color: #f0f2f5; 
+            text-align: center; 
+            padding: 16px; 
+            margin: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Nới rộng toàn màn hình */
-        .main-wrapper { max-width: 100%; margin: 0 auto; width: 96%; }
+        .main-wrapper { max-width: 600px; margin: 0 auto; width: 100%; }
 
-        h2 { font-size: 28px; font-weight: 800; margin: 20px 0; color: #1a1a1a; }
+        h2 { font-size: 24px; font-weight: 700; margin: 20px 0 30px; letter-spacing: -0.5px; }
 
-        /* Mode Selector to bự */
-        .mode-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        /* Minimalist Mode Selector */
+        .mode-selector { display: flex; gap: 12px; margin-bottom: 24px; }
         .mode-btn { 
-            flex: 1; padding: 20px 10px; border: 3px solid var(--primary-color); 
-            background: white; border-radius: 16px; font-weight: 900; font-size: 18px;
+            flex: 1; padding: 18px 10px; border: 1px solid var(--border-color); 
+            background: var(--card-bg); border-radius: 12px; font-weight: 600; font-size: 16px;
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s;
         }
-        .mode-btn.active { background: var(--primary-color); color: white; }
+        .mode-btn.active { 
+            background: var(--primary-color); color: white; border-color: var(--primary-color); 
+        }
 
-        #reader { width: 100%; border-radius: 20px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        #reader { 
+            width: 100%; border-radius: 12px; overflow: hidden; 
+            border: 1px solid var(--border-color); background: #000;
+        }
 
         .container { 
-            display: none; background: white; padding: 25px 20px; 
-            border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: left;
+            display: none; background: var(--card-bg); padding: 32px 24px; 
+            border-radius: 16px; border: 1px solid var(--border-color); 
+            text-align: left;
         }
 
         .section-title { 
-            font-size: 22px; color: var(--primary-color); border-left: 6px solid var(--primary-color);
-            padding-left: 15px; margin: 30px 0 20px 0; font-weight: 800; text-transform: uppercase;
+            font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px; margin: 32px 0 24px 0; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px;
         }
+        .section-title:first-child { margin-top: 0; }
 
-        .form-group { margin-bottom: 25px; }
+        .form-group { margin-bottom: 24px; }
         .form-group label { 
-            display: block; font-weight: 800; margin-bottom: 12px; 
-            font-size: 18px; color: #333;
+            display: block; font-weight: 500; margin-bottom: 8px; 
+            font-size: 14px; color: var(--text-main);
         }
 
-        /* Input & Select siêu to cho người già */
+        /* Increased Padding & Minimalist Inputs/Dropdowns */
         input, select { 
-            width: 100%; padding: 22px 15px; border: 3px solid #e0e0e0; 
-            border-radius: 18px; box-sizing: border-box; background: var(--input-bg);
-            font-size: 20px !important; /* Font cực to để Safari không zoom */
-            font-weight: 600; color: #000;
+            width: 100%; padding: 18px 16px; border: 1px solid var(--border-color); 
+            border-radius: 10px; box-sizing: border-box; background: var(--card-bg);
+            font-size: 18px !important; /* Prevents Safari zoom while being legible */
+            font-weight: 500; color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input:focus, select:focus { border-color: var(--primary-color); outline: none; background: #fff; }
+        input:focus, select:focus { 
+            border-color: var(--focus-ring); outline: none; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+        }
+
+        /* Custom Modern Dropdown */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px top 50%;
+            background-size: 12px auto;
+            padding-right: 40px;
+        }
         
-        /* Hiển thị số tiền lớn, đỏ đậm cho dễ nhìn */
         #amountDisplay {
-            font-size: 32px; font-weight: 900; color: #d32f2f; 
-            text-align: right; margin-top: 10px; display: block;
+            font-size: 28px; font-weight: 700; color: var(--text-main); 
+            text-align: right; margin-top: 12px; display: block; letter-spacing: -0.5px;
         }
 
+        /* Minimalist Buttons */
         .btn-main { 
-            width: 100%; padding: 25px; background: var(--primary-color); 
-            color: white; border: none; border-radius: 20px; 
-            font-size: 22px; font-weight: 900; cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0,102,255,0.4); margin-top: 15px;
+            width: 100%; padding: 20px; background: var(--primary-color); 
+            color: white; border: none; border-radius: 12px; 
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            margin-top: 16px; transition: background-color 0.2s;
         }
-        .btn-success { background: #2e7d32; box-shadow: 0 8px 20px rgba(46,125,50,0.4); }
+        .btn-main:hover { background: #1f2937; }
+        .btn-success { background: var(--success-color); }
+        .btn-success:hover { background: #059669; }
 
+        .btn-text {
+            width: 100%; background: none; border: none; color: var(--text-muted); 
+            font-size: 15px; font-weight: 500; margin-top: 20px; cursor: pointer;
+        }
+
+        /* Result Box */
+        .instruction-box {
+            background: #f3f4f6; padding: 24px; border-radius: 12px; 
+            text-align: left; font-size: 15px; font-weight: 500; color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* Loading */
         #loadingOverlay { 
             display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95);
             z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
         }
-        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid var(--primary-color); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        .spinner { 
+            border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); 
+            border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loadingOverlay"><div class="spinner"></div><p style="margin-top:20px; font-weight:900;">ĐANG XỬ LÝ...</p></div>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Processing...</p>
+    </div>
 
     <div class="main-wrapper">
-        <h2>QUÉT & THANH TOÁN</h2>
+        <h2>Quick Payment</h2>
 
         <div class="mode-selector">
-            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">📸 QUÉT QR</button>
-            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">⌨️ NHẬP TAY</button>
+            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan QR</button>
+            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Manual Entry</button>
         </div>
         
         <div id="scan-section">
             <div id="reader"></div>
-            <p style="font-weight:900; font-size:20px; margin-top:20px;">👇 Đưa camera vào mã QR</p>
+            <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Point camera at QR code</p>
         </div>
 
         <div id="form-container" class="container">
-            <h3 class="section-title">1. TIỀN & NGÂN HÀNG</h3>
+            <h3 class="section-title">Amount & Bank Info</h3>
             
             <div class="form-group">
-                <label>Số tiền muốn chuyển (VNĐ):</label>
+                <label>Transfer Amount (VND)</label>
                 <input type="text" id="amountInput" placeholder="0" inputmode="numeric" oninput="handleAmountInput(this)">
-                <span id="amountDisplay">0 đ</span>
+                <span id="amountDisplay">0</span>
             </div>
 
             <div class="form-group">
-                <label>Nội dung ghi trên QR:</label>
-                <input type="text" id="transferMemo" placeholder="Ghi chú">
+                <label>Transfer Memo</label>
+                <input type="text" id="transferMemo" placeholder="Enter memo">
             </div>
 
             <div id="manual-bank-info" style="display:none;">
                 <div class="form-group">
-                    <label>Số tài khoản nhận:</label>
-                    <input type="text" id="accNo" placeholder="Nhập số tài khoản">
+                    <label>Receiver Account No.</label>
+                    <input type="text" id="accNo" placeholder="Account number">
                 </div>
                 <div class="form-group">
-                    <label>Mã Ngân hàng (BIN):</label>
-                    <input type="text" id="bankId" placeholder="Ví dụ: 970436">
+                    <label>Receiver Bank ID (BIN)</label>
+                    <input type="text" id="bankId" placeholder="e.g., 970436">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Mở App Ngân hàng của bác:</label>
+                <label>Open Banking App</label>
                 <select id="appSelect">
                     <option value="vcbdigibank://">Vietcombank</option>
                     <option value="momo://">MoMo</option>
                     <option value="zalopay://">ZaloPay</option>
                     <option value="mbmobile://">MB Bank</option>
-                    <option value="techcombank://">Techcombank</option>
-                    <option value="none">Không mở app</option>
+                    <option value="tcbmobile://">Techcombank</option>
+                    <option value="none">Do not open app</option>
                 </select>
             </div>
 
-            <h3 class="section-title">2. HẠCH TOÁN CHI PHÍ</h3>
+            <h3 class="section-title">Accounting Details</h3>
             
+            <!-- ADDED FROM BANK HERE -->
             <div class="form-group">
-                <label>Người bán (Vendor):</label>
+                <label>From Bank</label>
+                <input type="text" id="fromBank" placeholder="e.g., VCB, TCB">
+            </div>
+
+            <div class="form-group">
+                <label>Vendor</label>
                 <select id="vendorSelect" onchange="updateAccountingMemo()"></select>
             </div>
             
             <div class="form-group">
-                <label>Đơn vị (Unit):</label>
+                <label>Unit</label>
                 <select id="unitSelect" onchange="updateAccountingMemo()"></select>
             </div>
             
             <div class="form-group">
-                <label>Hạng mục (Category):</label>
+                <label>Category</label>
                 <select id="categorySelect" onchange="updateAccountingMemo()"></select>
             </div>
 
             <div class="form-group">
-                <label>Mã hạch toán nội bộ:</label>
-                <input type="text" id="accountingMemo" readonly>
+                <label>Internal Accounting Code</label>
+                <input type="text" id="accountingMemo" readonly style="background: var(--bg-color); color: var(--text-muted);">
             </div>
 
-            <button class="btn-main" id="btnAction" onclick="processAll()">LƯU & TẠO QR</button>
-            <button style="width:100%; background:none; border:none; color:#666; font-size:18px; font-weight:bold; margin-top:20px;" onclick="location.reload()">HỦY LÀM LẠI</button>
+            <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
+            <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
 
         <div id="result-container" class="container" style="text-align:center;">
-            <h3 style="color: var(--success-color); font-size: 26px;">XONG RỒI BÁC ƠI!</h3>
-            <div style="background: #fff3cd; padding: 20px; border-radius: 15px; text-align: left; font-size: 18px; font-weight: bold; border: 2px solid #ffeeba;">
-                1. Đè tay vào QR chọn <b>"Lưu ảnh"</b><br>
-                2. Bấm nút xanh mở App Bank<br>
-                3. Trong App chọn <b>"Quét QR"</b> -> chọn <b>Ảnh</b> vừa lưu.
+            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Completed!</h3>
+            <div class="instruction-box">
+                1. Long press the QR code and select <b>"Save Image"</b><br><br>
+                2. Tap the green button to open your Banking App<br><br>
+                3. Choose <b>"Scan QR"</b> in the app -> select the saved image.
             </div>
 
-            <img id="finalQrImg" src="" style="width:100%; max-width:320px; margin: 25px auto; border: 8px solid #f0f0f0; border-radius: 20px;">
+            <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
 
-            <button class="btn-main btn-success" onclick="openBankApp()">🚀 MỞ APP NGÂN HÀNG</button>
-            <button style="width:100%; background:none; border:none; color:#666; font-size:18px; font-weight:bold; margin-top:25px;" onclick="location.reload()">QUÉT MÃ MỚI</button>
+            <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
+            <button class="btn-text" onclick="location.reload()">Scan New QR</button>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // Thay link của bác vào
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // Thay link của bạn
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
 
-        // --- LOGIC ĐỊNH DẠNG TIỀN ---
         function formatNumber(n) {
             return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
         function handleAmountInput(input) {
-            let val = input.value.replace(/\D/g, ""); // Chỉ lấy số
-            input.value = formatNumber(val); // Hiển thị có dấu phẩy trong ô nhập
-            document.getElementById('amountDisplay').innerText = (val ? formatNumber(val) : "0") + " đ";
+            let val = input.value.replace(/\D/g, ""); 
+            input.value = formatNumber(val); 
+            document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0";
         }
 
         window.onload = function() {
@@ -198,12 +258,16 @@
         };
 
         function switchMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             if (mode === 'manual') {
+                document.getElementById('btnManualMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('scan-section').style.display = 'none';
                 document.getElementById('form-container').style.display = 'block';
                 document.getElementById('manual-bank-info').style.display = 'block';
-            } else { location.reload(); }
+            } else { 
+                location.reload(); 
+            }
         }
 
         function initScanner() {
@@ -221,10 +285,9 @@
             document.getElementById('bankId').value = info.bankId;
             document.getElementById('accNo').value = info.accountNo;
             
-            // Điền tiền nếu trong QR có sẵn
             if(info.amount) {
                 document.getElementById('amountInput').value = formatNumber(info.amount);
-                document.getElementById('amountDisplay').innerText = formatNumber(info.amount) + " đ";
+                document.getElementById('amountDisplay').innerText = formatNumber(info.amount);
             }
             
             document.getElementById('transferMemo').value = info.message || "";
@@ -236,17 +299,17 @@
         function loadCategories() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
-                fill('vendorSelect', data.vendors);
-                fill('unitSelect', data.units);
-                fill('categorySelect', data.categories);
+                fill('vendorSelect', data.vendors, "Select Vendor");
+                fill('unitSelect', data.units, "Select Unit");
+                fill('categorySelect', data.categories, "Select Category");
                 updateAccountingMemo();
                 document.getElementById('loadingOverlay').style.display = 'none';
             }).catch(() => document.getElementById('loadingOverlay').style.display = 'none');
         }
 
-        function fill(id, list) {
+        function fill(id, list, placeholder) {
             let s = document.getElementById(id);
-            s.innerHTML = '<option value="">-- CHỌN --</option>';
+            s.innerHTML = `<option value="">-- ${placeholder} --</option>`;
             list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
         }
 
@@ -262,7 +325,6 @@
         function processAll() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             
-            // Lấy giá trị số (bỏ dấu phẩy)
             let rawAmount = document.getElementById('amountInput').value.replace(/\D/g, "");
 
             let data = {
@@ -270,6 +332,7 @@
                 accountNo: document.getElementById('accNo').value,
                 amount: rawAmount,
                 transferMemo: document.getElementById('transferMemo').value,
+                fromBank: document.getElementById('fromBank').value, // Thêm fromBank
                 vendor: document.getElementById('vendorSelect').value,
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
