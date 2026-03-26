@@ -3,69 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner to Sheets</title>
+    <title>Scanner to Sheets</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 100%; max-width: 500px; margin: 0 auto; }
-        #result { margin-top: 20px; padding: 10px; background: #f0f0f0; word-break: break-all; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 600px; margin: 0 auto; }
+        #reader { width: 100%; margin-bottom: 20px; }
+        .info-box { text-align: left; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .info-box p { margin: 5px 0; font-size: 15px; }
+        strong { color: #0056b3; }
     </style>
 </head>
 <body>
 
-    <h2>Quét Mã QR Chuyển Khoản</h2>
-    
+    <h2>Quét Mã QR Ngân Hàng</h2>
     <div id="reader"></div>
-    
-    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+    <div id="result">
+        <div class="info-box" id="parsedData">
+            <p><strong>Ngân hàng (BIN):</strong> <span id="bankId">-</span></p>
+            <p><strong>Số tài khoản:</strong> <span id="accNo">-</span></p>
+            <p><strong>Số tiền:</strong> <span id="amount">-</span></p>
+            <p><strong>Nội dung:</strong> <span id="msg">-</span></p>
+        </div>
+        <p id="statusMsg">Sẵn sàng quét...</p>
+    </div>
 
     <script>
-        // THAY LINK GAS CỦA BẠN VÀO ĐÂY
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // Dán link Web App mới của bạn vào đây
 
-        // Khởi tạo thư viện quét QR
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { fps: 10, qrbox: {width: 250, height: 250} }, 
-            /* verbose= */ false
-        );
+        // Hàm bóc tách dữ liệu theo chuẩn TLV của VietQR
+        function parseVietQR(qrString) {
+            function parseTLV(str) {
+                let tags = {};
+                let i = 0;
+                while (i < str.length) {
+                    let id = str.substr(i, 2);
+                    let len = parseInt(str.substr(i + 2, 2));
+                    let val = str.substr(i + 4, len);
+                    tags[id] = val;
+                    i += 4 + len;
+                }
+                return tags;
+            }
 
-        // Hàm chạy khi quét thành công
-        function onScanSuccess(decodedText, decodedResult) {
-            // Tạm dừng quét để tránh gửi liên tục nhiều request
+            try {
+                let rootTags = parseTLV(qrString);
+                let result = { bankId: "", accountNo: "", amount: "", message: "", rawText: qrString };
+
+                // Tag 38 chứa thông tin định danh người thụ hưởng
+                if (rootTags["38"]) {
+                    let merchantInfo = parseTLV(rootTags["38"]);
+                    if (merchantInfo["01"]) {
+                        let beneficiary = parseTLV(merchantInfo["01"]);
+                        result.bankId = beneficiary["00"] || ""; 
+                        result.accountNo = beneficiary["01"] || ""; 
+                    }
+                }
+                // Tag 54 chứa số tiền
+                if (rootTags["54"]) result.amount = rootTags["54"];
+                // Tag 62 chứa nội dung bổ sung
+                if (rootTags["62"]) {
+                    let additionalData = parseTLV(rootTags["62"]);
+                    if (additionalData["08"]) result.message = additionalData["08"];
+                }
+                return result;
+            } catch (e) {
+                console.error("Lỗi parse QR:", e);
+                return { rawText: qrString };
+            }
+        }
+
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+
+        function onScanSuccess(decodedText) {
             html5QrcodeScanner.pause();
             
-            document.getElementById('result').innerText = "Đang gửi dữ liệu: " + decodedText;
+            // Bóc tách dữ liệu
+            let parsedInfo = parseVietQR(decodedText);
+            
+            // Hiển thị lên màn hình
+            document.getElementById('bankId').innerText = parsedInfo.bankId || "Không có";
+            document.getElementById('accNo').innerText = parsedInfo.accountNo || "Không có";
+            document.getElementById('amount').innerText = parsedInfo.amount ? Number(parsedInfo.amount).toLocaleString('vi-VN') + " đ" : "Không có";
+            document.getElementById('msg').innerText = parsedInfo.message || "Không có";
+            document.getElementById('statusMsg').innerText = "Đang lưu vào hệ thống...";
 
-            // Dùng Fetch API để bắn dữ liệu (POST request) sang GAS
+            // Gửi lên Google Sheets
             fetch(GAS_URL, {
                 method: "POST",
-                mode: "no-cors", // Bắt buộc khi gọi chéo domain mà chưa cấu hình header CORS phức tạp trên GAS
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    qrText: decodedText
-                })
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(parsedInfo)
             })
-            .then(response => {
-                document.getElementById('result').innerText = "✅ Đã lưu vào Sheets!\nNội dung: " + decodedText;
-                // Tiếp tục quét sau 2 giây
-                setTimeout(() => html5QrcodeScanner.resume(), 2000);
+            .then(() => {
+                document.getElementById('statusMsg').innerText = "✅ Đã lưu dữ liệu thành công!";
+                setTimeout(() => {
+                    document.getElementById('statusMsg').innerText = "Tiếp tục quét...";
+                    html5QrcodeScanner.resume();
+                }, 3000);
             })
-            .catch(error => {
-                document.getElementById('result').innerText = "❌ Lỗi: " + error;
+            .catch(err => {
+                document.getElementById('statusMsg').innerText = "❌ Lỗi kết nối. Vui lòng thử lại.";
                 html5QrcodeScanner.resume();
             });
         }
 
-        function onScanFailure(error) {
-            // Bỏ qua các lỗi không tìm thấy mã QR (chạy liên tục theo fps)
-        }
-
-        // Bắt đầu render khung camera
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        html5QrcodeScanner.render(onScanSuccess, () => {});
     </script>
-
 </body>
 </html>
