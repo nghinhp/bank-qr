@@ -3,52 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner to Sheets & Bank</title>
+    <title>Scanner: Transfer & Account</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f7f6;}
         #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #ddd;}
         
-        /* Form Box Styling */
         #form-container, #result-container { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;}
+        
+        /* Section styling for separation */
+        .section-title { font-size: 16px; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px;}
+        .section-title:first-child { margin-top: 0; }
+        
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .form-group input[readonly] { background-color: #e9ecef; color: #495057; }
         
-        .input-group { display: flex; gap: 10px; }
-        .input-group input { flex: 1; background-color: #e9ecef; }
-        
-        /* Buttons */
-        .btn-copy { background: #6c757d; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold;}
-        .btn-copy:active { background: #5a6268; }
         .btn-submit { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        .btn-submit:active { background: #0056b3; }
         .btn-success { background: #28a745; }
-        .btn-success:active { background: #218838; }
         .btn-cancel { width: 100%; padding: 10px; background: transparent; color: #dc3545; border: none; font-size: 14px; cursor: pointer; margin-top: 5px; text-decoration: underline;}
 
-        #statusMsg { font-weight: bold; color: #007bff; margin-top: 15px; text-align: center;}
-        
-        /* Result QR Styling */
-        .instruction-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; border: 1px solid #ffeeba; text-align: center;}
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; text-align: center; line-height: 100vh; font-weight: bold; color: #007bff;}
     </style>
 </head>
 <body>
 
-    <h2>Quét & Thanh Toán</h2>
+    <h2>Quét & Hạch Toán</h2>
     
+    <div id="loadingOverlay">Đang tải dữ liệu danh mục...</div>
     <div id="reader"></div>
     <p id="statusMsg">Đang bật camera...</p>
 
     <div id="form-container">
-        <div class="form-group">
-            <label>Ngân hàng (BIN):</label>
-            <input type="text" id="bankId" readonly style="background-color: #e9ecef;">
-        </div>
-        
-        <div class="form-group">
-            <label>Số tài khoản:</label>
-            <div class="input-group">
+        <h3 class="section-title">1. Thông Tin Chuyển Khoản</h3>
+        <div class="form-group" style="display:flex; gap:10px;">
+            <div style="flex: 1;">
+                <label>Ngân hàng:</label>
+                <input type="text" id="bankId" readonly>
+            </div>
+            <div style="flex: 2;">
+                <label>Số tài khoản:</label>
                 <input type="text" id="accNo" readonly>
             </div>
         </div>
@@ -59,53 +54,118 @@
         </div>
 
         <div class="form-group">
-            <label>Nội dung:</label>
-            <input type="text" id="msg" placeholder="Nhập nội dung chuyển khoản...">
+            <label>Nội dung chuyển khoản (Tạo QR):</label>
+            <input type="text" id="transferMemo" value="Thanh toan tien hang">
         </div>
 
         <div class="form-group">
-            <label>Mở ứng dụng thanh toán:</label>
+            <label>Mở App Ngân Hàng:</label>
             <select id="appSelect">
                 <option value="vcbdigibank://">Vietcombank</option>
                 <option value="momo://">MoMo</option>
                 <option value="zalopay://">ZaloPay</option>
                 <option value="mbmobile://">MB Bank</option>
-                <option value="tpbankmobile://">TPBank</option>
                 <option value="tcbmobile://">Techcombank</option>
-                <option value="acbapp://">ACB ONE</option>
-                <option value="none">Không mở app (Chỉ lưu)</option>
+                <option value="none">Không mở app</option>
             </select>
         </div>
 
-        <button class="btn-submit" id="btnAction" onclick="processAndGenerateQR()">Chốt Số Tiền & Tạo QR</button>
+        <h3 class="section-title">2. Thông Tin Hạch Toán</h3>
+        
+        <div class="form-group">
+            <label>Vendor:</label>
+            <select id="vendorSelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Vendor --</option></select>
+        </div>
+        
+        <div class="form-group">
+            <label>Unit:</label>
+            <select id="unitSelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Unit --</option></select>
+        </div>
+        
+        <div class="form-group">
+            <label>Category:</label>
+            <select id="categorySelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Category --</option></select>
+        </div>
+
+        <div class="form-group">
+            <label>Memo Hạch Toán (Tự động tạo):</label>
+            <input type="text" id="accountingMemo" readonly placeholder="[Vendor]_[Unit]_[Category]_[YYMMDD]">
+        </div>
+
+        <button class="btn-submit" id="btnAction" onclick="processAndGenerateQR()">Lưu & Tạo QR Thanh Toán</button>
         <button class="btn-cancel" onclick="resetScanner()">Hủy & Quét lại</button>
     </div>
 
     <div id="result-container">
-        <h3 style="color: #28a745; text-align: center; margin-top: 0;">✅ Đã tạo mã QR mới</h3>
-        
-        <div class="instruction-box">
-            <b>👉 Nhấn giữ</b> vào mã QR bên dưới để <b>Lưu hình ảnh</b>.<br>Sau đó bấm mở App Ngân Hàng để tải ảnh lên.
-        </div>
-
+        <h3 style="color: #28a745; text-align: center; margin-top: 0;">✅ Đã lưu Hạch toán & Tạo QR</h3>
+        <p style="text-align: center; font-size: 14px; margin-bottom: 15px;">
+            Nhấn giữ QR để lưu ảnh, sau đó mở app ngân hàng.
+        </p>
         <div style="text-align: center; margin: 20px 0;">
-            <img id="finalQrImg" src="" style="width: 100%; max-width: 250px; border-radius: 12px; border: 2px solid #007bff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <img id="finalQrImg" src="" style="width: 100%; max-width: 250px; border-radius: 12px; border: 2px solid #007bff;">
         </div>
-
-        <button class="btn-submit btn-success" id="btnOpenApp" onclick="openBankApp()">🚀 Mở App Ngân Hàng Ngay</button>
-        <button class="btn-cancel" onclick="resetScanner()">Hoàn thành & Quét mã mới</button>
+        <button class="btn-submit btn-success" onclick="openBankApp()">🚀 Mở App Ngân Hàng</button>
+        <button class="btn-cancel" onclick="location.reload()">Quét mã mới</button>
     </div>
 
     <script>
-        // THAY THẾ BẰNG URL WEB APP CỦA BẠN
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
-
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        let rawQrText = ""; 
+        // THAY BẰNG URL WEB APP CỦA BẠN SAU KHI DEPLOY NEW VERSION
+        const GAS_URL = "YOUR_NEW_GAS_WEB_APP_URL";
+        
         let currentAppScheme = "none";
+        let rawQrText = "";
 
-        // Logic Parse QR không đổi
+        // 1. Khởi tạo: Tải dữ liệu danh mục từ Sheet "listing"
+        window.onload = function() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+            
+            fetch(GAS_URL)
+                .then(response => response.json())
+                .then(data => {
+                    populateSelect('vendorSelect', data.vendors);
+                    populateSelect('unitSelect', data.units);
+                    populateSelect('categorySelect', data.categories);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error("Lỗi tải danh mục:", error);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert("Không thể tải danh mục từ Google Sheets. Vẫn có thể tiếp tục.");
+                });
+        };
+
+        function populateSelect(elementId, items) {
+            let select = document.getElementById(elementId);
+            items.forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item;
+                opt.innerHTML = item;
+                select.appendChild(opt);
+            });
+        }
+
+        // 2. Logic cập nhật chuỗi Accounting Memo
+        function updateAccountingMemo() {
+            let vendor = document.getElementById('vendorSelect').value || "Vendor";
+            let unit = document.getElementById('unitSelect').value || "Unit";
+            let category = document.getElementById('categorySelect').value || "Category";
+            
+            // Format YYMMDD
+            let d = new Date();
+            let yymmdd = d.getFullYear().toString().slice(-2) + 
+                         String(d.getMonth() + 1).padStart(2, '0') + 
+                         String(d.getDate()).padStart(2, '0');
+
+            // Format: Vendor_Unit_Category_YYMMDD
+            let memoString = `${vendor}_${unit}_${category}_${yymmdd}`;
+            document.getElementById('accountingMemo').value = memoString;
+        }
+
+        // 3. Scanner Logic
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+
         function parseVietQR(qrString) {
+            // ... (Giữ nguyên hàm parseVietQR từ code cũ của bạn) ...
             function parseTLV(str) {
                 let tags = {}; let i = 0;
                 while (i < str.length) {
@@ -124,10 +184,6 @@
                     }
                 }
                 if (rootTags["54"]) result.amount = rootTags["54"];
-                if (rootTags["62"]) {
-                    let additionalData = parseTLV(rootTags["62"]);
-                    if (additionalData["08"]) result.message = additionalData["08"];
-                }
                 return result;
             } catch (e) { return { bankId: "", accountNo: "", amount: "", message: "" }; }
         }
@@ -135,19 +191,21 @@
         function onScanSuccess(decodedText) {
             html5QrcodeScanner.pause();
             rawQrText = decodedText;
-            
             let parsedInfo = parseVietQR(decodedText);
             
             document.getElementById('bankId').value = parsedInfo.bankId;
             document.getElementById('accNo').value = parsedInfo.accountNo;
             document.getElementById('amount').value = parsedInfo.amount;
-            document.getElementById('msg').value = parsedInfo.message;
             
+            // Render default accounting memo
+            updateAccountingMemo();
+
             document.getElementById('reader').style.display = 'none';
             document.getElementById('form-container').style.display = 'block';
             document.getElementById('statusMsg').style.display = 'none';
         }
 
+        // 4. Xử lý Submit
         function processAndGenerateQR() {
             let btn = document.getElementById('btnAction');
             btn.innerText = "Đang xử lý...";
@@ -156,56 +214,50 @@
             let bankId = document.getElementById('bankId').value;
             let accountNo = document.getElementById('accNo').value;
             let amount = document.getElementById('amount').value;
-            let message = document.getElementById('msg').value;
+            
+            // Tách biệt 2 loại Memo
+            let transferMemo = document.getElementById('transferMemo').value;
+            let accountingMemo = document.getElementById('accountingMemo').value;
+            
             currentAppScheme = document.getElementById('appSelect').value;
 
-            // 1. Lưu dữ liệu ngầm lên Google Sheets
-            let finalData = { bankId, accountNo, amount, message, rawText: rawQrText };
+            // 1. Bắn data lên GAS (bao gồm cả transferMemo và accountingMemo)
+            let finalData = { 
+                bankId, 
+                accountNo, 
+                amount, 
+                transferMemo, 
+                accountingMemo, 
+                rawText: rawQrText 
+            };
+            
             fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(finalData)
-            }).catch(e => console.error("Lỗi gửi GAS:", e));
+            });
 
-            // 2. Render QR mới thông qua VietQR.io (Dùng template compact2 cho chuẩn app)
-            let qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(message)}`;
+            // 2. Tạo QR bằng transferMemo (Không dính dáng gì tới chuỗi hạch toán)
+            let qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(transferMemo)}`;
             
-            // Tải ảnh trước để tránh UI bị giật
             let imgLoad = new Image();
             imgLoad.onload = function() {
                 document.getElementById('finalQrImg').src = qrUrl;
-                
-                // 3. Chuyển đổi giao diện
                 document.getElementById('form-container').style.display = 'none';
                 document.getElementById('result-container').style.display = 'block';
-                
-                // Reset nút bấm cho lần sau
-                btn.innerText = "Chốt Số Tiền & Tạo QR";
-                btn.disabled = false;
-            };
-            imgLoad.onerror = function() {
-                alert("Không thể tải mã QR lúc này. Vui lòng thử lại.");
-                btn.innerText = "Chốt Số Tiền & Tạo QR";
-                btn.disabled = false;
             };
             imgLoad.src = qrUrl;
         }
 
         function openBankApp() {
-            if (currentAppScheme !== "none") {
-                window.location.href = currentAppScheme;
-            } else {
-                alert("Bạn đã chọn không mở ứng dụng.");
-            }
+            if (currentAppScheme !== "none") window.location.href = currentAppScheme;
         }
 
         function resetScanner() {
             document.getElementById('form-container').style.display = 'none';
-            document.getElementById('result-container').style.display = 'none';
             document.getElementById('reader').style.display = 'block';
             document.getElementById('statusMsg').style.display = 'block';
-            document.getElementById('statusMsg').innerText = "Đang quét...";
             html5QrcodeScanner.resume();
         }
 
