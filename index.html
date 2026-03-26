@@ -2,261 +2,328 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner: Transfer & Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THANH TOÁN NHANH</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f7f6;}
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #ddd;}
-        #form-container, #result-container { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;}
-        .section-title { font-size: 16px; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px;}
-        .section-title:first-child { margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .form-group input[readonly] { background-color: #e9ecef; color: #495057; }
-        .btn-submit { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        .btn-success { background: #28a745; }
-        .btn-cancel { width: 100%; padding: 10px; background: transparent; color: #dc3545; border: none; font-size: 14px; cursor: pointer; margin-top: 5px; text-decoration: underline;}
-        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; text-align: center; line-height: 100vh; font-weight: bold; color: #007bff;}
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --text-size: 18px; /* Chữ to cho dễ đọc */
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; padding: 15px; max-width: 600px; margin: 0 auto; 
+            background-color: #f0f2f5; color: #333;
+            line-height: 1.5;
+        }
+
+        /* Chặn auto zoom trên Safari bằng cách ép font >= 16px */
+        input, select, button { font-size: 16px !important; }
+
+        h2 { font-size: 24px; margin-bottom: 20px; color: #000; }
+
+        /* Tabs Chọn chế độ */
+        .mode-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-btn { 
+            flex: 1; padding: 15px; border: 2px solid var(--primary-color); 
+            background: white; border-radius: 10px; font-weight: bold; cursor: pointer;
+        }
+        .mode-btn.active { background: var(--primary-color); color: white; }
+
+        #reader { 
+            width: 100%; border-radius: 15px; overflow: hidden; 
+            border: 3px solid #ccc; background: #000; margin-bottom: 15px;
+        }
+
+        .container { 
+            display: none; background: white; padding: 25px; 
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            text-align: left;
+        }
+
+        .section-title { 
+            font-size: 20px; color: var(--primary-color); 
+            border-bottom: 3px solid var(--primary-color); 
+            padding-bottom: 8px; margin: 25px 0 15px 0; font-weight: 900;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { 
+            display: block; font-weight: bold; margin-bottom: 8px; 
+            font-size: 16px; color: #555;
+        }
+
+        input, select { 
+            width: 100%; padding: 15px; border: 2px solid #ddd; 
+            border-radius: 12px; box-sizing: border-box; 
+            background: #fff; display: block;
+        }
+
+        input[readonly] { background-color: #f8f9fa; border-color: #eee; color: #666; }
+
+        /* Nút bấm khổng lồ */
+        .btn-main { 
+            width: 100%; padding: 20px; background: var(--primary-color); 
+            color: white; border: none; border-radius: 15px; 
+            font-size: 20px; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+            margin-top: 10px;
+        }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-success { background: var(--success-color); box-shadow: 0 5px 15px rgba(40,167,69,0.3); }
+        
+        .btn-secondary { 
+            width: 100%; padding: 15px; background: none; 
+            color: var(--danger-color); border: none; font-size: 16px; 
+            font-weight: bold; margin-top: 15px; cursor: pointer;
+        }
+
+        #loadingOverlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.9); z-index: 9999; 
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;
+        }
+
+        #finalQrImg { width: 100%; max-width: 300px; display: block; margin: 0 auto; border: 5px solid #eee; border-radius: 15px; }
     </style>
 </head>
 <body>
 
-    <h2>Quét & Hạch Toán</h2>
+    <div id="loadingOverlay" style="display:none;">⏳ ĐANG TẢI...</div>
+
+    <h2>KẾ TOÁN & THANH TOÁN</h2>
+
+    <div class="mode-selector">
+        <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">📸 QUÉT MÃ</button>
+        <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">⌨️ NHẬP TAY</button>
+    </div>
     
-    <div id="loadingOverlay">Đang tải dữ liệu danh mục...</div>
-    <div id="reader"></div>
-    <p id="statusMsg">Đang bật camera...</p>
+    <div id="scan-section">
+        <div id="reader"></div>
+        <p id="statusMsg" style="font-weight:bold; font-size:18px;">Vui lòng đưa camera vào mã QR</p>
+    </div>
 
-    <div id="form-container">
-        <h3 class="section-title">1. Thông Tin Chuyển Khoản</h3>
-        <div class="form-group" style="display:flex; gap:10px;">
-            <div style="flex: 1;">
-                <label>Ngân hàng:</label>
-                <input type="text" id="bankId" readonly>
-            </div>
-            <div style="flex: 2;">
-                <label>Số tài khoản:</label>
-                <input type="text" id="accNo" readonly>
-            </div>
+    <div id="form-container" class="container">
+        <h3 class="section-title">1. TIỀN & APP</h3>
+        
+        <div class="form-group">
+            <label>Số tiền chuyển (VNĐ):</label>
+            <input type="number" id="amount" placeholder="Ví dụ: 500000" inputmode="numeric">
         </div>
 
         <div class="form-group">
-            <label>Số tiền (VNĐ):</label>
-            <input type="number" id="amount" placeholder="Nhập số tiền...">
+            <label>Nội dung chuyển (Tạo QR):</label>
+            <input type="text" id="transferMemo" placeholder="Ghi chú chuyển tiền">
+        </div>
+
+        <div class="form-group" id="manual-bank-info" style="display:none;">
+            <label>Số tài khoản người nhận:</label>
+            <input type="text" id="accNo" placeholder="Nhập số tài khoản">
+            <label style="margin-top:10px;">Mã Ngân hàng (BIN):</label>
+            <input type="text" id="bankId" placeholder="Ví dụ: 970436">
         </div>
 
         <div class="form-group">
-            <label>Nội dung chuyển khoản (Tạo QR):</label>
-            <input type="text" id="transferMemo" placeholder="Nội dung chuyển khoản...">
-        </div>
-
-        <div class="form-group">
-            <label>Mở App Ngân Hàng:</label>
+            <label>Chọn App Ngân hàng của bác:</label>
             <select id="appSelect">
                 <option value="vcbdigibank://">Vietcombank</option>
                 <option value="momo://">MoMo</option>
                 <option value="zalopay://">ZaloPay</option>
                 <option value="mbmobile://">MB Bank</option>
                 <option value="tcbmobile://">Techcombank</option>
-                <option value="none">Không mở app</option>
+                <option value="tpb-android-app://">TPBank</option>
+                <option value="none">Chỉ lưu - Không mở app</option>
             </select>
         </div>
 
-        <h3 class="section-title">2. Thông Tin Hạch Toán</h3>
+        <h3 class="section-title">2. HẠCH TOÁN</h3>
         
         <div class="form-group">
-            <label>Vendor:</label>
-            <select id="vendorSelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Vendor --</option></select>
+            <label>Người bán (Vendor):</label>
+            <select id="vendorSelect" onchange="updateAccountingMemo()"></select>
         </div>
         
         <div class="form-group">
-            <label>Unit:</label>
-            <select id="unitSelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Unit --</option></select>
+            <label>Đơn vị (Unit):</label>
+            <select id="unitSelect" onchange="updateAccountingMemo()"></select>
         </div>
         
         <div class="form-group">
-            <label>Category:</label>
-            <select id="categorySelect" onchange="updateAccountingMemo()"><option value="">-- Chọn Category --</option></select>
+            <label>Hạng mục (Category):</label>
+            <select id="categorySelect" onchange="updateAccountingMemo()"></select>
         </div>
 
         <div class="form-group">
-            <label>Memo Hạch Toán (Tự động tạo):</label>
-            <input type="text" id="accountingMemo" readonly placeholder="[Vendor]_[Unit]_[Category]_[YYMMDD]">
+            <label>Mã hạch toán nội bộ:</label>
+            <input type="text" id="accountingMemo" readonly>
         </div>
 
-        <button class="btn-submit" id="btnAction" onclick="processAndGenerateQR()">Lưu & Tạo QR Thanh Toán</button>
-        <button class="btn-cancel" onclick="resetScanner()">Hủy & Quét lại</button>
+        <button class="btn-main" id="btnAction" onclick="processAll()">LƯU & TẠO QR</button>
+        <button class="btn-secondary" onclick="location.reload()">HỦY & LÀM LẠI</button>
     </div>
 
-    <div id="result-container">
-        <h3 style="color: #28a745; text-align: center; margin-top: 0;">✅ Đã lưu Hạch toán & Tạo QR</h3>
-        <p style="text-align: center; font-size: 14px; margin-bottom: 15px;">
-            Nhấn giữ QR để lưu ảnh, sau đó mở app ngân hàng.
-        </p>
-        <div style="text-align: center; margin: 20px 0;">
-            <img id="finalQrImg" src="" style="width: 100%; max-width: 250px; border-radius: 12px; border: 2px solid #007bff;">
+    <div id="result-container" class="container">
+        <h3 style="text-align: center; color: var(--success-color);">XONG! BÁC LÀM THEO BƯỚC:</h3>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: bold;">
+            1. Đè tay vào hình QR chọn "Lưu ảnh"<br>
+            2. Bấm nút xanh để mở App ngân hàng<br>
+            3. Trong App chọn "Quét mã" -> chọn Ảnh vừa lưu.
         </div>
-        <button class="btn-submit btn-success" onclick="openBankApp()">🚀 Mở App Ngân Hàng</button>
-        <button class="btn-cancel" onclick="location.reload()">Quét mã mới</button>
+
+        <img id="finalQrImg" src="">
+
+        <button class="btn-main btn-success" onclick="openBankApp()">🚀 MỞ APP NGÂN HÀNG</button>
+        <button class="btn-secondary" onclick="location.reload()">QUAY LẠI QUÉT MỚI</button>
     </div>
 
     <script>
-        // THAY BẰNG URL WEB APP CỦA BẠN SAU KHI DEPLOY NEW VERSION
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // Thay link GAS của bác vào đây
         
+        let html5QrcodeScanner;
         let currentAppScheme = "none";
-        let rawQrText = "";
+        let rawQrText = "MANUAL_INPUT";
 
+        // Khởi tạo lấy data
         window.onload = function() {
-            document.getElementById('loadingOverlay').style.display = 'block';
-            fetch(GAS_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error("Network response was not ok");
-                    return response.json();
-                })
-                .then(data => {
-                    if(data.error) throw new Error(data.error);
-                    populateSelect('vendorSelect', data.vendors || []);
-                    populateSelect('unitSelect', data.units || []);
-                    populateSelect('categorySelect', data.categories || []);
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                })
-                .catch(error => {
-                    console.error("Lỗi tải danh mục:", error);
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    alert("Không thể tải danh mục từ Google Sheets. Vẫn có thể tiếp tục.");
-                });
+            loadCategories();
+            initScanner();
         };
 
-        function populateSelect(elementId, items) {
-            let select = document.getElementById(elementId);
-            items.forEach(item => {
-                let opt = document.createElement('option');
-                opt.value = item;
-                opt.innerHTML = item;
-                select.appendChild(opt);
-            });
+        function switchMode(mode) {
+            document.getElementById('btnScanMode').className = 'mode-btn ' + (mode === 'scan' ? 'active' : '');
+            document.getElementById('btnManualMode').className = 'mode-btn ' + (mode === 'manual' ? 'active' : '');
+            
+            if (mode === 'manual') {
+                if (html5QrcodeScanner) html5QrcodeScanner.clear();
+                document.getElementById('scan-section').style.display = 'none';
+                document.getElementById('form-container').style.display = 'block';
+                document.getElementById('manual-bank-info').style.display = 'block';
+                document.getElementById('accNo').readOnly = false;
+                document.getElementById('bankId').readOnly = false;
+            } else {
+                location.reload();
+            }
+        }
+
+        function initScanner() {
+            // ÉP CAMERA SAU (facingMode: environment)
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, 
+                qrbox: {width: 280, height: 280},
+                videoConstraints: { facingMode: "environment" } 
+            }, false);
+            html5QrcodeScanner.render(onScanSuccess);
+        }
+
+        function loadCategories() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            fetch(GAS_URL)
+                .then(r => r.json())
+                .then(data => {
+                    fill('vendorSelect', data.vendors);
+                    fill('unitSelect', data.units);
+                    fill('categorySelect', data.categories);
+                    updateAccountingMemo();
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                })
+                .catch(() => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
+        }
+
+        function fill(id, list) {
+            let s = document.getElementById(id);
+            s.innerHTML = '<option value="">-- Chọn --</option>';
+            list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
+        }
+
+        function onScanSuccess(text) {
+            html5QrcodeScanner.clear();
+            rawQrText = text;
+            let info = parseVietQR(text);
+            
+            document.getElementById('bankId').value = info.bankId;
+            document.getElementById('accNo').value = info.accountNo;
+            document.getElementById('amount').value = info.amount;
+            document.getElementById('transferMemo').value = info.message || "";
+            
+            document.getElementById('scan-section').style.display = 'none';
+            document.getElementById('form-container').style.display = 'block';
+            updateAccountingMemo();
+        }
+
+        function parseVietQR(str) {
+            function tlv(s) {
+                let t = {}; let i = 0;
+                while (i < s.length) {
+                    let id = s.substr(i, 2), len = parseInt(s.substr(i + 2, 2)), val = s.substr(i + 4, len);
+                    t[id] = val; i += 4 + len;
+                } return t;
+            }
+            try {
+                let root = tlv(str);
+                let res = { bankId: "", accountNo: "", amount: root["54"] || "", message: "" };
+                if (root["38"]) {
+                    let m = tlv(root["38"]);
+                    if (m["01"]) {
+                        let b = tlv(m["01"]);
+                        res.bankId = b["00"]; res.accountNo = b["01"];
+                    }
+                }
+                if (root["62"]) {
+                    let a = tlv(root["62"]);
+                    res.message = a["08"];
+                }
+                return res;
+            } catch (e) { return {}; }
         }
 
         function updateAccountingMemo() {
-            let vendor = document.getElementById('vendorSelect').value || "Vendor";
-            let unit = document.getElementById('unitSelect').value || "Unit";
-            let category = document.getElementById('categorySelect').value || "Category";
-            
+            let v = document.getElementById('vendorSelect').value || "V";
+            let u = document.getElementById('unitSelect').value || "U";
+            let c = document.getElementById('categorySelect').value || "C";
             let d = new Date();
-            let yymmdd = d.getFullYear().toString().slice(-2) + 
-                         String(d.getMonth() + 1).padStart(2, '0') + 
-                         String(d.getDate()).padStart(2, '0');
-
-            let memoString = `${vendor}_${unit}_${category}_${yymmdd}`;
-            document.getElementById('accountingMemo').value = memoString;
+            let date = d.getFullYear().toString().slice(-2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+            document.getElementById('accountingMemo').value = `${v}_${u}_${c}_${date}`;
         }
 
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-
-        function parseVietQR(qrString) {
-            function parseTLV(str) {
-                let tags = {}; let i = 0;
-                while (i < str.length) {
-                    let id = str.substr(i, 2); let len = parseInt(str.substr(i + 2, 2));
-                    let val = str.substr(i + 4, len); tags[id] = val; i += 4 + len;
-                } return tags;
-            }
-            try {
-                let rootTags = parseTLV(qrString);
-                let result = { bankId: "", accountNo: "", amount: "", message: "" };
-                if (rootTags["38"]) {
-                    let merchantInfo = parseTLV(rootTags["38"]);
-                    if (merchantInfo["01"]) {
-                        let beneficiary = parseTLV(merchantInfo["01"]);
-                        result.bankId = beneficiary["00"] || ""; result.accountNo = beneficiary["01"] || ""; 
-                    }
-                }
-                if (rootTags["54"]) result.amount = rootTags["54"];
-                if (rootTags["62"]) {
-                    let additionalData = parseTLV(rootTags["62"]);
-                    if (additionalData["08"]) result.message = additionalData["08"];
-                }
-                return result;
-            } catch (e) { return { bankId: "", accountNo: "", amount: "", message: "" }; }
-        }
-
-        function onScanSuccess(decodedText) {
-            html5QrcodeScanner.pause();
-            rawQrText = decodedText;
-            let parsedInfo = parseVietQR(decodedText);
-            
-            document.getElementById('bankId').value = parsedInfo.bankId;
-            document.getElementById('accNo').value = parsedInfo.accountNo;
-            document.getElementById('amount').value = parsedInfo.amount;
-            
-            // CẬP NHẬT: Gán memo quét được từ mã QR (nếu có) làm mặc định
-            document.getElementById('transferMemo').value = parsedInfo.message || "";
-            
-            updateAccountingMemo();
-
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('form-container').style.display = 'block';
-            document.getElementById('statusMsg').style.display = 'none';
-        }
-
-        function processAndGenerateQR() {
+        function processAll() {
             let btn = document.getElementById('btnAction');
-            btn.innerText = "Đang xử lý...";
+            btn.innerText = "ĐANG LƯU...";
             btn.disabled = true;
 
-            let bankId = document.getElementById('bankId').value;
-            let accountNo = document.getElementById('accNo').value;
-            let amount = document.getElementById('amount').value;
-            let transferMemo = document.getElementById('transferMemo').value;
-            
-            // Lấy thêm các trường phân rã
-            let vendor = document.getElementById('vendorSelect').value;
-            let unit = document.getElementById('unitSelect').value;
-            let category = document.getElementById('categorySelect').value;
-            let accountingMemo = document.getElementById('accountingMemo').value;
-            
+            let data = {
+                bankId: document.getElementById('bankId').value,
+                accountNo: document.getElementById('accNo').value,
+                amount: document.getElementById('amount').value,
+                transferMemo: document.getElementById('transferMemo').value,
+                vendor: document.getElementById('vendorSelect').value,
+                unit: document.getElementById('unitSelect').value,
+                category: document.getElementById('categorySelect').value,
+                accountingMemo: document.getElementById('accountingMemo').value,
+                rawText: rawQrText
+            };
+
             currentAppScheme = document.getElementById('appSelect').value;
 
-            // Bắn đầy đủ data lên GAS
-            let finalData = { 
-                bankId, accountNo, amount, transferMemo, 
-                vendor, unit, category, accountingMemo, 
-                rawText: rawQrText 
-            };
-            
-            fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(finalData)
-            });
+            // Gửi GAS ngầm
+            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
 
-            let qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(transferMemo)}`;
+            // Tạo QR
+            let qrUrl = `https://img.vietqr.io/image/${data.bankId}-${data.accountNo}-compact2.png?amount=${data.amount}&addInfo=${encodeURIComponent(data.transferMemo)}`;
+            document.getElementById('finalQrImg').src = qrUrl;
             
-            let imgLoad = new Image();
-            imgLoad.onload = function() {
-                document.getElementById('finalQrImg').src = qrUrl;
-                document.getElementById('form-container').style.display = 'none';
-                document.getElementById('result-container').style.display = 'block';
-            };
-            imgLoad.src = qrUrl;
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
         }
 
         function openBankApp() {
             if (currentAppScheme !== "none") window.location.href = currentAppScheme;
         }
-
-        function resetScanner() {
-            document.getElementById('form-container').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('statusMsg').style.display = 'block';
-            html5QrcodeScanner.resume();
-        }
-
-        html5QrcodeScanner.render(onScanSuccess, () => {});
     </script>
 </body>
 </html>
