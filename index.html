@@ -151,16 +151,14 @@
                 <label>Open Banking App</label>
                 <select id="appSelect">
                     <option value="none">Do not open app</option>
-                    <option value="techcombank://">Techcombank</option>
-                    <option value="acb://">ACB</option>
-                    <option value="sacombank://">Sacombank</option>
-
+                    <option value="techcombankmobile://">Techcombank</option>
+                    <option value="acbapp://">ACB ONE</option>
+                    <option value="sacombankpay://">Sacombank Pay</option>
                 </select>
             </div>
 
             <h3 class="section-title">Accounting Details</h3>
             
-            <!-- UPDATE: From Bank thành Select -->
             <div class="form-group">
                 <label>From Bank</label>
                 <select id="fromBank"></select>
@@ -181,7 +179,6 @@
                 <select id="categorySelect" onchange="updateAccountingMemo()"></select>
             </div>
 
-            <!-- UPDATE: Thêm Flexbox và nút Copy -->
             <div class="form-group">
                 <label>Internal Accounting Code</label>
                 <div style="display: flex; gap: 8px;">
@@ -306,7 +303,6 @@
             document.getElementById('accountingMemo').value = `${v}_${u}_${c}_${date}`;
         }
 
-        // HÀM MỚI: Copy mã hạch toán
         function copyAccountingMemo() {
             let copyText = document.getElementById("accountingMemo");
             let btn = document.getElementById("btnCopyMemo");
