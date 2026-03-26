@@ -1,211 +1,119 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
+<html>
+  <head>
+    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner to Sheets & Bank</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f7f6;}
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #ddd;}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Thanh Toán Hóa Đơn</title>
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tạo Đơn Thanh Toán</h2>
+
+      <form id="payment-form" class="space-y-4">
+        <div>
+          <label for="order-id" class="block text-sm font-medium text-gray-700">Mã hóa đơn / Phiếu xuất</label>
+          <input type="text" id="order-id" required placeholder="VD: PXK-001" 
+                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors">
+        </div>
+
+        <div>
+          <label for="amount" class="block text-sm font-medium text-gray-700">Tổng tiền (VND)</label>
+          <input type="number" id="amount" required min="1000" placeholder="Nhập số tiền..." 
+                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors">
+        </div>
+
+        <button type="submit" 
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+          Tạo mã QR Chuyển khoản
+        </button>
+      </form>
+
+      <div id="qr-section" class="mt-8 hidden flex-col items-center border-t border-gray-200 pt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quét mã để thanh toán</h3>
         
-        /* Form Box Styling */
-        #form-container { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;}
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        
-        /* Flex box for copy button */
-        .input-group { display: flex; gap: 10px; }
-        .input-group input { flex: 1; background-color: #e9ecef; }
-        .btn-copy { background: #6c757d; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold;}
-        .btn-copy:active { background: #5a6268; }
-
-        .btn-submit { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        .btn-submit:active { background: #0056b3; }
-        .btn-cancel { width: 100%; padding: 10px; background: transparent; color: #dc3545; border: none; font-size: 14px; cursor: pointer; margin-top: 5px; text-decoration: underline;}
-
-        #statusMsg { font-weight: bold; color: #007bff; margin-top: 15px; text-align: center;}
-    </style>
-</head>
-<body>
-
-    <h2>Quét & Thanh Toán</h2>
-    
-    <div id="reader"></div>
-    <p id="statusMsg">Đang bật camera...</p>
-
-    <div id="form-container">
-        <div class="form-group">
-            <label>Ngân hàng (BIN):</label>
-            <input type="text" id="bankId" readonly style="background-color: #e9ecef;">
-        </div>
-        
-        <div class="form-group">
-            <label>Số tài khoản:</label>
-            <div class="input-group">
-                <input type="text" id="accNo" readonly>
-                <button class="btn-copy" onclick="copyToClipboard('accNo')">Copy</button>
-            </div>
+        <div class="bg-gray-50 border border-gray-100 p-4 rounded-lg w-full mb-4 text-center text-sm text-gray-700">
+          <p>Số tiền: <strong id="display-amount" class="text-red-600 text-xl font-bold">0</strong><strong> VND</strong></p>
+          <p class="mt-2">Lời nhắn: <span id="display-message" class="font-medium text-gray-900 px-2 py-1 bg-gray-200 rounded">...</span></p>
         </div>
 
-        <div class="form-group">
-            <label>Số tiền (VNĐ):</label>
-            <input type="number" id="amount" placeholder="Nhập số tiền...">
+        <div class="relative inline-block w-full max-w-[250px] aspect-square flex justify-center items-center">
+          <div id="qr-loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 hidden z-10">
+            <span class="text-sm text-blue-600 font-medium animate-pulse">Đang khởi tạo mã...</span>
+          </div>
+          <img id="qr-image" src="" alt="Mã QR Thanh toán" class="rounded-lg shadow-md w-full h-full object-contain hidden" />
         </div>
 
-        <div class="form-group">
-            <label>Nội dung:</label>
-            <input type="text" id="msg" placeholder="Nhập nội dung chuyển khoản...">
-        </div>
-
-        <div class="form-group">
-            <label>Mở ứng dụng thanh toán:</label>
-            <select id="appSelect">
-                <option value="zalopay://">ZaloPay</option>
-                <option value="momo://">MoMo</option>
-                <option value="vcbdigibank://">Vietcombank</option>
-                <option value="mbmobile://">MB Bank</option>
-                <option value="tpbankmobile://">TPBank</option>
-                <option value="tcbmobile://">Techcombank</option>
-                
-                <option value="acbapp://">ACB ONE</option>
-                
-                <option value="sacombankpay://">Sacombank Pay</option>
-                <option value="stbmobile://">Sacombank mBanking</option>                
-                <option value="none">Không mở app (Chỉ lưu)</option>
-            </select>
-        </div>
-
-        <button class="btn-submit" id="btnAction" onclick="saveAndOpenApp()">Lưu & Mở App</button>
-        <button class="btn-cancel" onclick="resetScanner()">Hủy & Quét lại</button>
+        <p class="text-xs text-gray-500 mt-4 text-center">
+          Sử dụng App Ngân hàng bất kỳ hỗ trợ VietQR để quét mã.
+        </p>
+      </div>
     </div>
 
     <script>
-        // URL GAS của bạn
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
+      // 1. Cấu hình hằng số (Constants) - Đặt ở đầu để dễ thay đổi
+      const BANK_CONFIG = {
+        ID: "MB",
+        ACCOUNT_NO: "551789999",
+        ACCOUNT_NAME: "NGUYEN HONG PHUONG NGHI"
+      };
 
-        // Khởi tạo máy quét
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+      // 2. Định danh và lưu trữ các DOM Elements
+      const form = document.getElementById('payment-form');
+      const qrSection = document.getElementById('qr-section');
+      const qrImage = document.getElementById('qr-image');
+      const displayAmount = document.getElementById('display-amount');
+      const displayMessage = document.getElementById('display-message');
+      const qrLoading = document.getElementById('qr-loading');
+
+      // 3. Quản lý sự kiện (Event Listeners)
+      form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Chặn hành vi tải lại trang mặc định của form
+
+        // Lấy dữ liệu và làm sạch (trim) khoảng trắng thừa
+        const orderId = document.getElementById('order-id').value.trim();
+        const amount = parseInt(document.getElementById('amount').value, 10);
+
+        if (orderId && amount > 0) {
+          generatePaymentQR(amount, orderId);
+        }
+      });
+
+      // 4. Logic cốt lõi: Tạo và xử lý UI mã QR
+      function generatePaymentQR(amount, orderId) {
+        // Chuẩn hóa nội dung chuyển khoản: Không dấu, viết hoa để tương thích 100% các app ngân hàng
+        const rawMessage = `Thanh toan don ${orderId}`;
+        const cleanMessage = rawMessage.toUpperCase();
         
-        let rawQrText = ""; // Lưu tạm chuỗi gốc
+        // Kích hoạt UI hiển thị QR và màn hình loading
+        qrSection.classList.remove('hidden');
+        qrSection.classList.add('flex');
+        qrImage.classList.add('hidden'); // Tạm ẩn ảnh cũ nếu có
+        qrLoading.classList.remove('hidden');
+        
+        // Cập nhật text hiển thị cho người dùng kiểm tra lại
+        displayAmount.innerText = amount.toLocaleString('vi-VN');
+        displayMessage.innerText = cleanMessage;
 
-        // Hàm parse VietQR (Giữ nguyên như cũ)
-        function parseVietQR(qrString) {
-            function parseTLV(str) {
-                let tags = {}; let i = 0;
-                while (i < str.length) {
-                    let id = str.substr(i, 2);
-                    let len = parseInt(str.substr(i + 2, 2));
-                    let val = str.substr(i + 4, len);
-                    tags[id] = val; i += 4 + len;
-                } return tags;
-            }
-            try {
-                let rootTags = parseTLV(qrString);
-                let result = { bankId: "", accountNo: "", amount: "", message: "" };
-                if (rootTags["38"]) {
-                    let merchantInfo = parseTLV(rootTags["38"]);
-                    if (merchantInfo["01"]) {
-                        let beneficiary = parseTLV(merchantInfo["01"]);
-                        result.bankId = beneficiary["00"] || ""; result.accountNo = beneficiary["01"] || ""; 
-                    }
-                }
-                if (rootTags["54"]) result.amount = rootTags["54"];
-                if (rootTags["62"]) {
-                    let additionalData = parseTLV(rootTags["62"]);
-                    if (additionalData["08"]) result.message = additionalData["08"];
-                }
-                return result;
-            } catch (e) { return { bankId: "", accountNo: "", amount: "", message: "" }; }
-        }
+        // Xây dựng URL gọi API (Dùng encodeURIComponent để an toàn hóa chuỗi string trên URL)
+        const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.ID}-${BANK_CONFIG.ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(cleanMessage)}&accountName=${encodeURIComponent(BANK_CONFIG.ACCOUNT_NAME)}`;
 
-        // Chạy khi quét thành công
-        function onScanSuccess(decodedText) {
-            html5QrcodeScanner.pause();
-            rawQrText = decodedText;
-            
-            let parsedInfo = parseVietQR(decodedText);
-            
-            // Đổ dữ liệu vào Form
-            document.getElementById('bankId').value = parsedInfo.bankId;
-            document.getElementById('accNo').value = parsedInfo.accountNo;
-            document.getElementById('amount').value = parsedInfo.amount;
-            document.getElementById('msg').value = parsedInfo.message;
-            
-            // Đổi giao diện
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('form-container').style.display = 'block';
-            document.getElementById('statusMsg').innerText = "Vui lòng kiểm tra và nhập số tiền.";
-        }
-
-        // Hàm Copy số tài khoản
-        function copyToClipboard(elementId) {
-            var copyText = document.getElementById(elementId);
-            copyText.select();
-            copyText.setSelectionRange(0, 99999); // Dành cho mobile
-            navigator.clipboard.writeText(copyText.value);
-            
-            let status = document.getElementById('statusMsg');
-            status.innerText = "✅ Đã copy số tài khoản!";
-            status.style.color = "#28a745";
-        }
-
-        // Hàm xử lý Lưu dữ liệu và Mở App
-        function saveAndOpenApp() {
-            let btn = document.getElementById('btnAction');
-            btn.innerText = "Đang lưu...";
-            btn.disabled = true;
-
-            // Lấy dữ liệu CHÍNH THỨC từ Form (sau khi người dùng có thể đã sửa đổi)
-            let finalData = {
-                bankId: document.getElementById('bankId').value,
-                accountNo: document.getElementById('accNo').value,
-                amount: document.getElementById('amount').value,
-                message: document.getElementById('msg').value,
-                rawText: rawQrText
-            };
-
-            let selectedApp = document.getElementById('appSelect').value;
-
-            // Gửi API lên Google Sheets
-            fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(finalData)
-            })
-            .then(() => {
-                btn.innerText = "Lưu & Mở App";
-                btn.disabled = false;
-                
-                // Sau khi lưu xong, điều hướng mở app ngân hàng
-                if(selectedApp !== "none") {
-                    window.location.href = selectedApp;
-                } else {
-                    alert("Đã lưu vào Sheets thành công!");
-                }
-                
-                // Tự động quay lại màn hình quét
-                resetScanner();
-            })
-            .catch(err => {
-                alert("Lỗi khi lưu dữ liệu mạng. Vui lòng thử lại.");
-                btn.innerText = "Lưu & Mở App";
-                btn.disabled = false;
-            });
-        }
-
-        // Hàm reset lại giao diện quét
-        function resetScanner() {
-            document.getElementById('form-container').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('statusMsg').innerText = "Đang quét...";
-            document.getElementById('statusMsg').style.color = "#007bff";
-            html5QrcodeScanner.resume();
-        }
-
-        html5QrcodeScanner.render(onScanSuccess, () => {});
+        // Xử lý luồng tải ảnh bất đồng bộ (Asynchronous Image Loading)
+        qrImage.onload = () => {
+          qrLoading.classList.add('hidden'); // Tắt loading
+          qrImage.classList.remove('hidden'); // Hiện ảnh thật
+        };
+        
+        qrImage.onerror = () => {
+          qrLoading.classList.add('hidden');
+          alert('Không thể kết nối đến máy chủ tạo mã QR. Vui lòng kiểm tra mạng và thử lại.');
+        };
+        
+        // Bắt đầu tiến trình tải ảnh từ URL
+        qrImage.src = qrUrl;
+      }
     </script>
-</body>
+  </body>
 </html>
