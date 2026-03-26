@@ -6,27 +6,31 @@
     <title>Scanner to Sheets & Bank</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f7f6; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #ddd; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f7f6;}
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #ddd;}
         
         /* Form Box Styling */
-        #form-container { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; }
+        #form-container, #result-container { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;}
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px;}
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
         
-        /* Flex box for copy button */
         .input-group { display: flex; gap: 10px; }
         .input-group input { flex: 1; background-color: #e9ecef; }
-        .btn-copy { background: #6c757d; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        /* Buttons */
+        .btn-copy { background: #6c757d; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold;}
         .btn-copy:active { background: #5a6268; }
-
-        .btn-submit { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s;}
+        .btn-submit { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         .btn-submit:active { background: #0056b3; }
-        .btn-submit:disabled { background: #a0c4ff; cursor: not-allowed; }
-        .btn-cancel { width: 100%; padding: 10px; background: transparent; color: #dc3545; border: none; font-size: 14px; cursor: pointer; margin-top: 5px; text-decoration: underline; }
+        .btn-success { background: #28a745; }
+        .btn-success:active { background: #218838; }
+        .btn-cancel { width: 100%; padding: 10px; background: transparent; color: #dc3545; border: none; font-size: 14px; cursor: pointer; margin-top: 5px; text-decoration: underline;}
 
-        #statusMsg { font-weight: bold; color: #007bff; margin-top: 15px; text-align: center; }
+        #statusMsg { font-weight: bold; color: #007bff; margin-top: 15px; text-align: center;}
+        
+        /* Result QR Styling */
+        .instruction-box { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; border: 1px solid #ffeeba; text-align: center;}
     </style>
 </head>
 <body>
@@ -46,7 +50,6 @@
             <label>Số tài khoản:</label>
             <div class="input-group">
                 <input type="text" id="accNo" readonly>
-                <button class="btn-copy" onclick="copyToClipboard('accNo')">Copy</button>
             </div>
         </div>
 
@@ -63,47 +66,56 @@
         <div class="form-group">
             <label>Mở ứng dụng thanh toán:</label>
             <select id="appSelect">
-                <option value="zalopay://">ZaloPay</option>
-                <option value="momo://">MoMo</option>
                 <option value="vcbdigibank://">Vietcombank</option>
+                <option value="momo://">MoMo</option>
+                <option value="zalopay://">ZaloPay</option>
                 <option value="mbmobile://">MB Bank</option>
                 <option value="tpbankmobile://">TPBank</option>
                 <option value="tcbmobile://">Techcombank</option>
                 <option value="acbapp://">ACB ONE</option>
-                <option value="sacombankpay://">Sacombank Pay</option>
-                <option value="stbmobile://">Sacombank mBanking</option>                
                 <option value="none">Không mở app (Chỉ lưu)</option>
             </select>
         </div>
 
-        <button class="btn-submit" id="btnAction" onclick="saveAndOpenApp()">Xác nhận & Mở App</button>
+        <button class="btn-submit" id="btnAction" onclick="processAndGenerateQR()">Chốt Số Tiền & Tạo QR</button>
         <button class="btn-cancel" onclick="resetScanner()">Hủy & Quét lại</button>
     </div>
 
+    <div id="result-container">
+        <h3 style="color: #28a745; text-align: center; margin-top: 0;">✅ Đã tạo mã QR mới</h3>
+        
+        <div class="instruction-box">
+            <b>👉 Nhấn giữ</b> vào mã QR bên dưới để <b>Lưu hình ảnh</b>.<br>Sau đó bấm mở App Ngân Hàng để tải ảnh lên.
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <img id="finalQrImg" src="" style="width: 100%; max-width: 250px; border-radius: 12px; border: 2px solid #007bff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </div>
+
+        <button class="btn-submit btn-success" id="btnOpenApp" onclick="openBankApp()">🚀 Mở App Ngân Hàng Ngay</button>
+        <button class="btn-cancel" onclick="resetScanner()">Hoàn thành & Quét mã mới</button>
+    </div>
+
     <script>
-        // --- CẤU HÌNH ---
-        // THAY THẾ BẰNG URL WEB APP CỦA BẠN (Đảm bảo đã deploy lại bản mới nhất nếu có sửa file Code.gs)
+        // THAY THẾ BẰNG URL WEB APP CỦA BẠN
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
 
-        // --- KHỞI TẠO ---
         const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        let rawQrText = "";
+        let rawQrText = ""; 
+        let currentAppScheme = "none";
 
-        // --- LOGIC XỬ LÝ VIETQR ---
+        // Logic Parse QR không đổi
         function parseVietQR(qrString) {
             function parseTLV(str) {
                 let tags = {}; let i = 0;
                 while (i < str.length) {
-                    let id = str.substr(i, 2);
-                    let len = parseInt(str.substr(i + 2, 2));
-                    let val = str.substr(i + 4, len);
-                    tags[id] = val; i += 4 + len;
+                    let id = str.substr(i, 2); let len = parseInt(str.substr(i + 2, 2));
+                    let val = str.substr(i + 4, len); tags[id] = val; i += 4 + len;
                 } return tags;
             }
             try {
                 let rootTags = parseTLV(qrString);
                 let result = { bankId: "", accountNo: "", amount: "", message: "" };
-                
                 if (rootTags["38"]) {
                     let merchantInfo = parseTLV(rootTags["38"]);
                     if (merchantInfo["01"]) {
@@ -117,116 +129,86 @@
                     if (additionalData["08"]) result.message = additionalData["08"];
                 }
                 return result;
-            } catch (e) { 
-                return { bankId: "", accountNo: "", amount: "", message: "" }; 
-            }
+            } catch (e) { return { bankId: "", accountNo: "", amount: "", message: "" }; }
         }
 
-        // --- GIAO DIỆN & TƯƠNG TÁC ---
         function onScanSuccess(decodedText) {
             html5QrcodeScanner.pause();
             rawQrText = decodedText;
             
             let parsedInfo = parseVietQR(decodedText);
             
-            // Đổ dữ liệu vào Form
             document.getElementById('bankId').value = parsedInfo.bankId;
             document.getElementById('accNo').value = parsedInfo.accountNo;
             document.getElementById('amount').value = parsedInfo.amount;
             document.getElementById('msg').value = parsedInfo.message;
             
-            // Chuyển đổi màn hình
             document.getElementById('reader').style.display = 'none';
             document.getElementById('form-container').style.display = 'block';
-            document.getElementById('statusMsg').innerText = "Vui lòng kiểm tra thông tin thanh toán.";
+            document.getElementById('statusMsg').style.display = 'none';
         }
 
-        function copyToClipboard(elementId) {
-            var copyText = document.getElementById(elementId);
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            
-            let status = document.getElementById('statusMsg');
-            status.innerText = "✅ Đã copy STK: " + copyText.value;
-            status.style.color = "#28a745";
-        }
-
-        function resetScanner() {
-            document.getElementById('form-container').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('statusMsg').innerText = "Đang quét...";
-            document.getElementById('statusMsg').style.color = "#007bff";
-            html5QrcodeScanner.resume();
-        }
-
-        // --- LUỒNG XỬ LÝ CHÍNH (HACK UX) ---
-        function saveAndOpenApp() {
+        function processAndGenerateQR() {
             let btn = document.getElementById('btnAction');
             btn.innerText = "Đang xử lý...";
             btn.disabled = true;
 
-            let finalData = {
-                bankId: document.getElementById('bankId').value,
-                accountNo: document.getElementById('accNo').value,
-                amount: document.getElementById('amount').value,
-                message: document.getElementById('msg').value,
-                rawText: rawQrText
+            let bankId = document.getElementById('bankId').value;
+            let accountNo = document.getElementById('accNo').value;
+            let amount = document.getElementById('amount').value;
+            let message = document.getElementById('msg').value;
+            currentAppScheme = document.getElementById('appSelect').value;
+
+            // 1. Lưu dữ liệu ngầm lên Google Sheets
+            let finalData = { bankId, accountNo, amount, message, rawText: rawQrText };
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(finalData)
+            }).catch(e => console.error("Lỗi gửi GAS:", e));
+
+            // 2. Render QR mới thông qua VietQR.io (Dùng template compact2 cho chuẩn app)
+            let qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(message)}`;
+            
+            // Tải ảnh trước để tránh UI bị giật
+            let imgLoad = new Image();
+            imgLoad.onload = function() {
+                document.getElementById('finalQrImg').src = qrUrl;
+                
+                // 3. Chuyển đổi giao diện
+                document.getElementById('form-container').style.display = 'none';
+                document.getElementById('result-container').style.display = 'block';
+                
+                // Reset nút bấm cho lần sau
+                btn.innerText = "Chốt Số Tiền & Tạo QR";
+                btn.disabled = false;
             };
-
-            let selectedApp = document.getElementById('appSelect').value;
-            
-            // Quyết định copy STK vào khay nhớ tạm để dán nhanh
-            let textToCopy = finalData.accountNo; 
-            
-            // Ghi vào clipboard (cần chạy trong block do người dùng kích hoạt trực tiếp)
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                
-                // 1. Đẩy dữ liệu ngầm lên GAS (Không dùng await/then để tránh block luồng chuyển app)
-                fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors", // Bắt buộc cho GAS Web App gọi từ domain khác
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(finalData)
-                }).catch(err => console.error("Lưu ngầm thất bại:", err));
-
-                // 2. Chuyển hướng mở app lập tức
-                if (selectedApp !== "none") {
-                    window.location.href = selectedApp; 
-                } else {
-                    alert("✅ Đã copy STK: " + textToCopy + "\nDữ liệu đang được lưu ngầm.");
-                }
-
-                // 3. Reset giao diện sau 1.5 giây để sẵn sàng cho khách tiếp theo
-                setTimeout(() => {
-                    btn.innerText = "Xác nhận & Mở App";
-                    btn.disabled = false;
-                    resetScanner();
-                }, 1500);
-
-            }).catch(err => {
-                // Fallback nếu browser chặn API Clipboard
-                console.error("Không thể tự động copy:", err);
-                fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(finalData)
-                });
-                
-                if (selectedApp !== "none") {
-                    window.location.href = selectedApp; 
-                }
-                
-                setTimeout(() => {
-                    btn.innerText = "Xác nhận & Mở App";
-                    btn.disabled = false;
-                    resetScanner();
-                }, 1500);
-            });
+            imgLoad.onerror = function() {
+                alert("Không thể tải mã QR lúc này. Vui lòng thử lại.");
+                btn.innerText = "Chốt Số Tiền & Tạo QR";
+                btn.disabled = false;
+            };
+            imgLoad.src = qrUrl;
         }
 
-        // Khởi động scanner khi tải trang
+        function openBankApp() {
+            if (currentAppScheme !== "none") {
+                window.location.href = currentAppScheme;
+            } else {
+                alert("Bạn đã chọn không mở ứng dụng.");
+            }
+        }
+
+        function resetScanner() {
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('reader').style.display = 'block';
+            document.getElementById('statusMsg').style.display = 'block';
+            document.getElementById('statusMsg').innerText = "Đang quét...";
+            html5QrcodeScanner.resume();
+        }
+
         html5QrcodeScanner.render(onScanSuccess, () => {});
     </script>
 </body>
