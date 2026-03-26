@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner to Sheets</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: 0 auto; }
+        #result { margin-top: 20px; padding: 10px; background: #f0f0f0; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <h2>Quét Mã QR Chuyển Khoản</h2>
+    
+    <div id="reader"></div>
+    
+    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+
+    <script>
+        // THAY LINK GAS CỦA BẠN VÀO ĐÂY
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec";
+
+        // Khởi tạo thư viện quét QR
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { fps: 10, qrbox: {width: 250, height: 250} }, 
+            /* verbose= */ false
+        );
+
+        // Hàm chạy khi quét thành công
+        function onScanSuccess(decodedText, decodedResult) {
+            // Tạm dừng quét để tránh gửi liên tục nhiều request
+            html5QrcodeScanner.pause();
+            
+            document.getElementById('result').innerText = "Đang gửi dữ liệu: " + decodedText;
+
+            // Dùng Fetch API để bắn dữ liệu (POST request) sang GAS
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors", // Bắt buộc khi gọi chéo domain mà chưa cấu hình header CORS phức tạp trên GAS
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    qrText: decodedText
+                })
+            })
+            .then(response => {
+                document.getElementById('result').innerText = "✅ Đã lưu vào Sheets!\nNội dung: " + decodedText;
+                // Tiếp tục quét sau 2 giây
+                setTimeout(() => html5QrcodeScanner.resume(), 2000);
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = "❌ Lỗi: " + error;
+                html5QrcodeScanner.resume();
+            });
+        }
+
+        function onScanFailure(error) {
+            // Bỏ qua các lỗi không tìm thấy mã QR (chạy liên tục theo fps)
+        }
+
+        // Bắt đầu render khung camera
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+
+</body>
+</html>
