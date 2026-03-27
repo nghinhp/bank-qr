@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QUICK PAYMENT</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes"> <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Thanh Toán"> <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
-
+    <title>QUẢN LÝ THU CHI & THANH TOÁN</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Thu Chi">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -20,6 +20,7 @@
             --focus-ring: #3b82f6;
             --success-color: #10b981;
             --highlight-bg: #eff6ff;
+            --warning-color: #f59e0b;
         }
 
         body { 
@@ -88,8 +89,6 @@
             transition: all 0.2s; white-space: nowrap;
         }
 
-        .instruction-box { background: #f3f4f6; padding: 24px; border-radius: 12px; text-align: left; font-size: 15px; font-weight: 500; color: var(--text-main); line-height: 1.6; }
-
         #favAccountGroup { background: var(--highlight-bg); padding: 16px; border-radius: 12px; border: 1px dashed #93c5fd; margin-bottom: 24px; }
         #favAccountGroup label { color: #1e3a8a; }
         #favAccountGroup select { background-color: #fff; border-color: #bfdbfe; }
@@ -97,6 +96,9 @@
         #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Utility class để ẩn element */
+        .d-none { display: none !important; }
     </style>
 </head>
 <body>
@@ -107,7 +109,7 @@
     </div>
 
     <div class="main-wrapper">
-        <h2>Quick Payment</h2>
+        <h2>Finance Manager</h2>
 
         <div class="mode-selector">
             <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan QR</button>
@@ -120,16 +122,46 @@
         </div>
 
         <div id="form-container" class="container">
-            <h3 class="section-title">Amount & Bank Info</h3>
+            
+            <h3 class="section-title">Cashflow Routing</h3>
             
             <div class="form-group">
-                <label>Transfer Amount (VND)</label>
+                <label>Transaction Type</label>
+                <select id="txType" onchange="handleTxTypeChange()">
+                    <option value="EXPENSE">Chi tiền (Expense / Payment)</option>
+                    <option value="TRANSFER">Chuyển nội bộ (Internal Transfer)</option>
+                    <option value="INCOME">Thu tiền (Income)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Source of Fund (Nguồn tiền)</label>
+                <select id="sourceFund" onchange="handleSourceFundChange()">
+                    <option value="BANK">Ngân hàng (Bank Transfer)</option>
+                    <option value="CASH">Tiền mặt (Cash)</option>
+                    <option value="CREDIT">Thẻ tín dụng (Credit Card)</option>
+                </select>
+            </div>
+
+            <div class="form-group d-none" id="destFundGroup">
+                <label style="color: var(--warning-color);">Destination Fund (Chuyển đến)</label>
+                <select id="destFund">
+                    <option value="BANK">Ngân hàng (Bank)</option>
+                    <option value="CASH">Tiền mặt (Cash)</option>
+                    <option value="CREDIT">Thanh toán nợ Thẻ tín dụng</option>
+                </select>
+            </div>
+
+            <h3 class="section-title">Transaction Info</h3>
+            
+            <div class="form-group">
+                <label>Amount (VND)</label>
                 <input type="text" id="amountInput" placeholder="0" inputmode="numeric" oninput="handleAmountInput(this)">
                 <span id="amountDisplay">0</span>
             </div>
 
             <div class="form-group">
-                <label>Transfer Memo</label>
+                <label>Bank/QR Memo</label>
                 <input type="text" id="transferMemo" placeholder="Enter memo">
             </div>
 
@@ -142,73 +174,76 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Receiver Account No.</label>
+                    <label>Partner Account No.</label>
                     <input type="text" id="accNo" placeholder="Account number">
                 </div>
                 <div class="form-group">
-                    <label>Receiver Bank ID (BIN)</label>
+                    <label>Partner Bank ID (BIN)</label>
                     <input type="text" id="bankId" placeholder="e.g., 970436">
                 </div>
             </div>
 
+            <h3 class="section-title">Accounting Details</h3>
+            
+            <div id="accountingClassification">
+                <div class="form-group">
+                    <label>Vendor / Partner</label>
+                    <select id="vendorSelect" onchange="updateAccountingMemo()"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Unit / Cost Center</label>
+                    <select id="unitSelect" onchange="updateAccountingMemo()"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="categorySelect" onchange="updateAccountingMemo()"></select>
+                </div>
+            </div>
+
             <div class="form-group">
+                <label>Internal Accounting Code (Editable)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="accountingMemo" style="background: #fff; flex: 1;" oninput="memoManuallyEdited = true" placeholder="Tự động hoặc tự nhập...">
+                    <button type="button" id="btnCopyMemo" class="btn-copy" onclick="copyAccountingMemo()">Copy</button>
+                </div>
+            </div>
+
+            <div class="form-group" id="appSelectGroup">
                 <label>Open Banking App</label>
                 <select id="appSelect">
                     <option value="none">Do not open app</option>
-                    <option value="tcb://">Tech cxm</option>
-                    
+                    <option value="tcb://">Techcombank</option>
                     <option value="acbapp://">ACB ONE</option>
                     <option value="sacombankpay://">Sacombank Pay</option>
                 </select>
             </div>
 
-            <h3 class="section-title">Accounting Details</h3>
-            
-            <div class="form-group">
-                <label>From Bank</label>
-                <select id="fromBank"></select>
-            </div>
-
-            <div class="form-group">
-                <label>Vendor</label>
-                <select id="vendorSelect" onchange="updateAccountingMemo()"></select>
-            </div>
-            
-            <div class="form-group">
-                <label>Unit</label>
-                <select id="unitSelect" onchange="updateAccountingMemo()"></select>
-            </div>
-            
-            <div class="form-group">
-                <label>Category</label>
-                <select id="categorySelect" onchange="updateAccountingMemo()"></select>
-            </div>
-
-            <div class="form-group">
-                <label>Internal Accounting Code</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="accountingMemo" readonly style="background: var(--bg-color); color: var(--text-muted); flex: 1;">
-                    <button type="button" id="btnCopyMemo" class="btn-copy" onclick="copyAccountingMemo()">Copy</button>
-                </div>
-            </div>
-
-            <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
+            <button class="btn-main" id="btnAction" onclick="processAll()">Save Transaction</button>
             <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
 
         <div id="result-container" class="container" style="text-align:center;">
-            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Completed!</h3>
-            <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
-            <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
-            <button class="btn-text" onclick="location.reload()">Scan New QR</button>
+            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Saved Successfully!</h3>
+            
+            <div id="qrArea">
+                <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
+                <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
+            </div>
+
+            <button class="btn-text" style="margin-top: 30px;" onclick="location.reload()">Record New Transaction</button>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // Thay link của bạn
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; 
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
+        
+        // Biến cờ: Kiểm tra xem user có tự gõ vào ô hạch toán chưa
+        let memoManuallyEdited = false; 
 
         function formatNumber(n) {
             return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -224,6 +259,48 @@
             loadCategories();
             initScanner();
         };
+
+        // --- UI TOGGLE LOGIC THÔNG MINH ---
+        function handleTxTypeChange() {
+            let type = document.getElementById('txType').value;
+            let accClass = document.getElementById('accountingClassification');
+            let destFundGroup = document.getElementById('destFundGroup');
+
+            if (type === 'TRANSFER') {
+                accClass.classList.add('d-none'); // Giấu Vendor/Category
+                destFundGroup.classList.remove('d-none'); // Hiện mục đích chuyển
+                if(!memoManuallyEdited) {
+                    document.getElementById('accountingMemo').value = `TRANS_${document.getElementById('sourceFund').value}_TO_${document.getElementById('destFund').value}`;
+                }
+            } else {
+                accClass.classList.remove('d-none');
+                destFundGroup.classList.add('d-none');
+                updateAccountingMemo(); // Trả lại format hạch toán cũ
+            }
+        }
+
+        function handleSourceFundChange() {
+            let source = document.getElementById('sourceFund').value;
+            let appSelectGrp = document.getElementById('appSelectGroup');
+            
+            // Nếu dùng tiền mặt, không cần hiện nút mở App Ngân hàng
+            if (source === 'CASH') {
+                appSelectGrp.classList.add('d-none');
+            } else {
+                appSelectGrp.classList.remove('d-none');
+            }
+            
+            if(document.getElementById('txType').value === 'TRANSFER' && !memoManuallyEdited) {
+                 document.getElementById('accountingMemo').value = `TRANS_${source}_TO_${document.getElementById('destFund').value}`;
+            }
+        }
+        
+        document.getElementById('destFund').addEventListener('change', function() {
+            if(document.getElementById('txType').value === 'TRANSFER' && !memoManuallyEdited) {
+                 document.getElementById('accountingMemo').value = `TRANS_${document.getElementById('sourceFund').value}_TO_${this.value}`;
+            }
+        });
+        // ----------------------------------
 
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
@@ -264,8 +341,7 @@
         function loadCategories() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
-                fill('fromBank', data.fromBanks || [], "Select Source Bank");
-                fill('vendorSelect', data.vendors, "Select Vendor");
+                fill('vendorSelect', data.vendors, "Select Vendor/Partner");
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
                 
@@ -300,12 +376,15 @@
         }
 
         function updateAccountingMemo() {
+            if (memoManuallyEdited) return; // Không ghi đè nếu user đã nhập tay
+            if (document.getElementById('txType').value === 'TRANSFER') return; // Bỏ qua nếu là chuyển tiền
+
             let v = document.getElementById('vendorSelect').value || "V";
             let u = document.getElementById('unitSelect').value || "U";
             let c = document.getElementById('categorySelect').value || "C";
             let d = new Date();
             let date = d.getFullYear().toString().slice(-2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-            document.getElementById('accountingMemo').value = `${v} ${u} ${c} ${date}`;
+            document.getElementById('accountingMemo').value = `${v}_${u}_${c}_${date}`;
         }
 
         function copyAccountingMemo() {
@@ -329,13 +408,18 @@
         function processAll() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             let rawAmount = document.getElementById('amountInput').value.replace(/\D/g, "");
+            let source = document.getElementById('sourceFund').value;
 
+            // Đóng gói data mới
             let data = {
+                txType: document.getElementById('txType').value,
+                sourceFund: source,
+                destFund: document.getElementById('destFund').value,
+                
                 bankId: document.getElementById('bankId').value,
                 accountNo: document.getElementById('accNo').value,
                 amount: rawAmount,
                 transferMemo: document.getElementById('transferMemo').value,
-                fromBank: document.getElementById('fromBank').value,
                 vendor: document.getElementById('vendorSelect').value,
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
@@ -346,16 +430,26 @@
             currentAppScheme = document.getElementById('appSelect').value;
             fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
 
-            let qrUrl = `https://img.vietqr.io/image/${data.bankId}-${data.accountNo}-compact2.png?amount=${data.amount}&addInfo=${encodeURIComponent(data.transferMemo)}`;
-            
-            let img = new Image();
-            img.onload = () => {
-                document.getElementById('finalQrImg').src = qrUrl;
-                document.getElementById('form-container').style.display = 'none';
-                document.getElementById('result-container').style.display = 'block';
-                document.getElementById('loadingOverlay').style.display = 'none';
-            };
-            img.src = qrUrl;
+            // Logic thông minh: Tiền mặt hoặc Thẻ tín dụng thì KHÔNG CẦN gen mã QR
+            if (source === 'CASH' || source === 'CREDIT' || data.txType === 'INCOME') {
+                document.getElementById('qrArea').style.display = 'none';
+                showSuccessScreen();
+            } else {
+                let qrUrl = `https://img.vietqr.io/image/${data.bankId}-${data.accountNo}-compact2.png?amount=${data.amount}&addInfo=${encodeURIComponent(data.transferMemo)}`;
+                let img = new Image();
+                img.onload = () => {
+                    document.getElementById('finalQrImg').src = qrUrl;
+                    document.getElementById('qrArea').style.display = 'block';
+                    showSuccessScreen();
+                };
+                img.src = qrUrl;
+            }
+        }
+
+        function showSuccessScreen() {
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('loadingOverlay').style.display = 'none';
         }
 
         function openBankApp() { if (currentAppScheme !== "none") window.location.href = currentAppScheme; }
