@@ -3,92 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Kế Toán">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
     <title>QUICK PAYMENT & LEDGER</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --primary-color: #111827; 
-            --bg-color: #f7f7f8;
-            --card-bg: #ffffff;
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --border-color: #d1d5db;
-            --focus-ring: #3b82f6;
-            --success-color: #10b981;
-            --highlight-bg: #eff6ff;
+            --primary-color: #111827; --bg-color: #f7f7f8; --card-bg: #ffffff;
+            --text-main: #111827; --text-muted: #6b7280; --border-color: #d1d5db;
+            --focus-ring: #3b82f6; --success-color: #10b981; --danger-color: #ef4444;
         }
 
-        body { 
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; padding: 16px; margin: 0; 
-            background-color: var(--bg-color); color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-        }
-
+        body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 16px; margin: 0; background-color: var(--bg-color); color: var(--text-main); -webkit-font-smoothing: antialiased; }
         .main-wrapper { max-width: 600px; margin: 0 auto; width: 100%; }
-        h2 { font-size: 24px; font-weight: 700; margin: 20px 0 30px; letter-spacing: -0.5px; }
+        h2 { font-size: 24px; font-weight: 700; margin: 20px 0 20px; letter-spacing: -0.5px; }
 
-        .mode-selector { display: flex; gap: 12px; margin-bottom: 24px; }
-        .mode-btn { 
-            flex: 1; padding: 18px 10px; border: 1px solid var(--border-color); 
-            background: var(--card-bg); border-radius: 12px; font-weight: 600; font-size: 16px;
-            color: var(--text-muted); cursor: pointer; transition: all 0.2s;
-        }
+        /* Nút Tab chia 3 */
+        .mode-selector { display: flex; gap: 8px; margin-bottom: 24px; }
+        .mode-btn { flex: 1; padding: 16px 5px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 12px; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
         .mode-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #000; }
 
-        .container { 
-            display: none; background: var(--card-bg); padding: 32px 24px; 
-            border-radius: 16px; border: 1px solid var(--border-color); text-align: left;
-        }
-
-        .section-title { 
-            font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px; margin: 32px 0 24px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
-        }
+        .container { display: none; background: var(--card-bg); padding: 32px 24px; border-radius: 16px; border: 1px solid var(--border-color); text-align: left; }
+        .section-title { font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin: 32px 0 24px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         .section-title:first-child { margin-top: 0; }
 
         .form-group { margin-bottom: 24px; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; color: var(--text-main); }
-
-        input, select { 
-            width: 100%; padding: 18px 16px; border: 1px solid var(--border-color); 
-            border-radius: 10px; box-sizing: border-box; background: var(--card-bg);
-            font-size: 18px !important; font-weight: 500; color: var(--text-main);
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+        input, select { width: 100%; padding: 18px 16px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; background: var(--card-bg); font-size: 18px !important; font-weight: 500; color: var(--text-main); transition: border-color 0.2s; }
         input:focus, select:focus { border-color: var(--focus-ring); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-        select {
-            appearance: none; -webkit-appearance: none; -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; padding-right: 40px;
-        }
+        select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; padding-right: 40px; }
 
         #amountDisplay { font-size: 28px; font-weight: 700; color: var(--text-main); text-align: right; margin-top: 12px; display: block; letter-spacing: -0.5px; }
-
-        .btn-main { 
-            width: 100%; padding: 20px; background: var(--primary-color); color: white; 
-            border: none; border-radius: 12px; font-size: 16px; font-weight: 600; 
-            cursor: pointer; margin-top: 16px; transition: background-color 0.2s;
-        }
-        .btn-main:hover { background: #1f2937; }
+        
+        .btn-main { width: 100%; padding: 20px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 16px; }
         .btn-success { background: var(--success-color); }
-        .btn-success:hover { background: #059669; }
         .btn-text { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 15px; font-weight: 500; margin-top: 20px; cursor: pointer; }
+        .btn-copy { padding: 0 20px; background: #e5e7eb; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--text-main); cursor: pointer; white-space: nowrap; }
 
-        .btn-copy {
-            padding: 0 20px; background: #e5e7eb; border: none; border-radius: 10px;
-            font-size: 15px; font-weight: 600; color: var(--text-main); cursor: pointer;
-            transition: all 0.2s; white-space: nowrap;
-        }
-
-        .instruction-box { background: #f3f4f6; padding: 24px; border-radius: 12px; text-align: left; font-size: 15px; font-weight: 500; color: var(--text-main); line-height: 1.6; }
-
-        #favAccountGroup { background: var(--highlight-bg); padding: 16px; border-radius: 12px; border: 1px dashed #93c5fd; margin-bottom: 24px; }
-        #favAccountGroup label { color: #1e3a8a; }
-        #favAccountGroup select { background-color: #fff; border-color: #bfdbfe; }
+        /* Dashboard Styles */
+        .dash-card { background: var(--bg-color); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 24px; border: 1px solid var(--border-color); }
+        .dash-total { font-size: 32px; font-weight: 800; color: var(--danger-color); margin: 10px 0 0 0; }
+        .progress-bar-container { margin-bottom: 16px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .progress-track { background: #e5e7eb; border-radius: 8px; height: 10px; overflow: hidden; }
+        .progress-fill { background: var(--primary-color); height: 100%; border-radius: 8px; }
 
         #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
@@ -99,83 +61,95 @@
 
     <div id="loadingOverlay">
         <div class="spinner"></div>
-        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Processing...</p>
+        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Đang đồng bộ...</p>
     </div>
 
     <div class="main-wrapper">
-        <h2>Quick Payment & Ledger</h2>
+        <h2>App Kế Toán</h2>
 
         <div class="mode-selector">
-            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan QR</button>
-            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Manual Entry</button>
+            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Quét QR</button>
+            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Nhập Tay</button>
+            <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Báo Cáo</button>
         </div>
         
         <div id="scan-section">
             <div id="reader"></div>
-            <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Point camera at QR code</p>
+            <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Đưa camera vào mã QR</p>
+        </div>
+
+        <div id="dashboard-section" class="container">
+            <h3 class="section-title">Chi Phí Tháng Này</h3>
+            <div class="dash-card">
+                <p style="margin: 0; font-weight: 600; color: var(--text-muted);">TỔNG CHI</p>
+                <h2 class="dash-total" id="dashTotalValue">0 ₫</h2>
+            </div>
+            
+            <h3 class="section-title">Theo Hạng Mục (Category)</h3>
+            <div id="dashCategoryList">Tải dữ liệu...</div>
+
+            <h3 class="section-title">Theo Đơn Vị (Unit)</h3>
+            <div id="dashUnitList">Tải dữ liệu...</div>
         </div>
 
         <div id="form-container" class="container">
-            <h3 class="section-title">Amount & Bank Info</h3>
-            
+            <h3 class="section-title">Ngân hàng & Số tiền</h3>
             <div class="form-group">
-                <label>Transfer Amount (VND)</label>
+                <label>Số tiền (VNĐ)</label>
                 <input type="text" id="amountInput" placeholder="0" inputmode="numeric" oninput="handleAmountInput(this)">
                 <span id="amountDisplay">0</span>
             </div>
 
             <div class="form-group">
-                <label>Transfer Memo</label>
-                <input type="text" id="transferMemo" placeholder="Enter memo">
+                <label>Nội dung QR</label>
+                <input type="text" id="transferMemo" placeholder="Nhập ghi chú">
             </div>
 
             <div id="manual-bank-info" style="display:none;">
-                <div class="form-group" id="favAccountGroup" style="display:none;">
-                    <label>Favorite Account</label>
-                    <select id="favAccountSelect" onchange="applyFavAccount()">
-                        <option value="">-- Choose or Enter Manually below --</option>
-                    </select>
-                </div>
-
                 <div class="form-group">
-                    <label>Receiver Account No.</label>
-                    <input type="text" id="accNo" placeholder="Account number">
+                    <label>Số tài khoản người nhận</label>
+                    <input type="text" id="accNo" placeholder="STK">
                 </div>
                 <div class="form-group">
-                    <label>Receiver Bank ID (BIN)</label>
-                    <input type="text" id="bankId" placeholder="e.g., 970436">
+                    <label>Mã Ngân hàng (BIN)</label>
+                    <input type="text" id="bankId" placeholder="Ví dụ: 970436">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Open Banking App</label>
+                <label>Mở App Ngân hàng</label>
                 <select id="appSelect">
-                    <option value="none">Do not open app</option>
-                    <option value="tcb://">Techcombank</option>
+                    <option value="none">Không mở app</option>
+                    <option value="techcombankmobile://">Techcombank</option>
                     <option value="acbapp://">ACB ONE</option>
                     <option value="sacombankpay://">Sacombank Pay</option>
                 </select>
             </div>
 
-            <h3 class="section-title">Accounting Details</h3>
-            
+            <h3 class="section-title">Hạch Toán Chi Phí</h3>
             <div class="form-group">
-                <label>Transaction Type</label>
+                <label>Loại Giao Dịch</label>
                 <select id="txType" onchange="toggleTransferFields()">
-                    <option value="Expense">Expense</option>
-                    <option value="Income">Income</option>
-                    <option value="Transfer">Transfer</option>
+                    <option value="Expense">Expense (Chi tiền)</option>
+                    <option value="Income">Income (Thu tiền)</option>
+                    <option value="Transfer">Transfer (Chuyển nội bộ)</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label id="fromBankLabel">From</label>
-                <select id="fromBank"></select>
+                <label id="fromBankLabel">From Bank (Chi từ quỹ/thẻ)</label>
+                <input type="text" id="fromBank" placeholder="Ví dụ: Tien mat, VCB...">
+            </div>
+
+            <div class="form-group" id="statementPeriodGroup">
+                <label>Kỳ thanh toán thẻ (Tùy chọn)</label>
+                <input type="month" id="statementPeriod" style="background: var(--bg-color);">
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">*Chỉ áp dụng khi chi từ Thẻ Tín Dụng</p>
             </div>
 
             <div class="form-group" id="toBankGroup" style="display: none;">
-                <label>To</label>
-                <select id="toBank"></select>
+                <label>To Bank (Chuyển đến quỹ)</label>
+                <input type="text" id="toBank" placeholder="Ví dụ: Tien mat, VCB...">
             </div>
 
             <div class="form-group">
@@ -194,22 +168,22 @@
             </div>
 
             <div class="form-group">
-                <label>Internal Accounting Code</label>
+                <label>Mã Hạch Toán Nội Bộ</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="accountingMemo" style="background: var(--bg-color); flex: 1;" placeholder="Editable Code...">
+                    <input type="text" id="accountingMemo" style="background: var(--bg-color); flex: 1;">
                     <button type="button" id="btnCopyMemo" class="btn-copy" onclick="copyAccountingMemo()">Copy</button>
                 </div>
             </div>
 
-            <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
-            <button class="btn-text" onclick="location.reload()">Cancel</button>
+            <button class="btn-main" id="btnAction" onclick="processAll()">Lưu & Tạo QR</button>
+            <button class="btn-text" onclick="location.reload()">Hủy bỏ</button>
         </div>
 
         <div id="result-container" class="container" style="text-align:center;">
-            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Completed!</h3>
+            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Đã Xong!</h3>
             <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
-            <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
-            <button class="btn-text" onclick="location.reload()">Scan New QR</button>
+            <button class="btn-main btn-success" onclick="openBankApp()">Mở App Ngân Hàng</button>
+            <button class="btn-text" onclick="location.reload()">Quét mã khác</button>
         </div>
     </div>
 
@@ -219,7 +193,7 @@
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
 
-        function formatNumber(n) { return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+        function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
         function handleAmountInput(input) {
             let val = input.value.replace(/\D/g, ""); 
@@ -227,23 +201,30 @@
             document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0";
         }
 
-        window.onload = function() { loadCategories(); initScanner(); };
+        window.onload = function() { loadDashboardAndData(); initScanner(); };
 
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('scan-section').style.display = 'none';
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'none';
+
             if (mode === 'manual') {
                 document.getElementById('btnManualMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
-                document.getElementById('scan-section').style.display = 'none';
                 document.getElementById('form-container').style.display = 'block';
                 document.getElementById('manual-bank-info').style.display = 'block';
-            } else { location.reload(); }
+            } else if (mode === 'dashboard') {
+                document.getElementById('btnDashboardMode').classList.add('active');
+                if (html5QrcodeScanner) html5QrcodeScanner.clear();
+                document.getElementById('dashboard-section').style.display = 'block';
+            } else {
+                location.reload(); 
+            }
         }
 
         function initScanner() {
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-                fps: 15, qrbox: {width: 280, height: 280}, videoConstraints: { facingMode: "environment" } 
-            });
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: {width: 280, height: 280}, videoConstraints: { facingMode: "environment" } });
             html5QrcodeScanner.render(onScanSuccess);
         }
 
@@ -258,33 +239,26 @@
                 document.getElementById('amountInput').value = formatNumber(info.amount);
                 document.getElementById('amountDisplay').innerText = formatNumber(info.amount);
             }
-            
             document.getElementById('transferMemo').value = info.message || "";
             document.getElementById('scan-section').style.display = 'none';
             document.getElementById('form-container').style.display = 'block';
             updateAccountingMemo();
         }
 
-        function loadCategories() {
+        function loadDashboardAndData() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
-                fill('fromBank', data.fromBanks || [], "Select Source Bank");
-                fill('toBank', data.fromBanks || [], "Select Destination Bank"); // Dùng chung list ngân hàng
-                fill('vendorSelect', data.vendors, "Select Vendor");
-                fill('unitSelect', data.units, "Select Unit");
-                fill('categorySelect', data.categories, "Select Category");
-                
-                if (data.favAccounts && data.favAccounts.length > 0) {
-                    let favSelect = document.getElementById('favAccountSelect');
-                    data.favAccounts.forEach(acc => {
-                        let displayName = acc.nickName || acc.holderName || acc.accountNo;
-                        let valueData = `${acc.bankCode}|${acc.accountNo}`;
-                        favSelect.innerHTML += `<option value="${valueData}">${displayName} - ${acc.accountNo}</option>`;
-                    });
-                    document.getElementById('favAccountGroup').style.display = 'block';
+                // Load Dropdowns
+                fill('vendorSelect', data.vendors, "Chọn Vendor");
+                fill('unitSelect', data.units, "Chọn Unit");
+                fill('categorySelect', data.categories, "Chọn Category");
+                updateAccountingMemo();
+
+                // Render Dashboard
+                if (data.dashboard) {
+                    renderDashboard(data.dashboard);
                 }
 
-                updateAccountingMemo();
                 document.getElementById('loadingOverlay').style.display = 'none';
             }).catch(() => document.getElementById('loadingOverlay').style.display = 'none');
         }
@@ -292,29 +266,44 @@
         function fill(id, list, placeholder) {
             let s = document.getElementById(id);
             s.innerHTML = `<option value="">-- ${placeholder} --</option>`;
-            list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
+            if(list) list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
         }
 
-        function applyFavAccount() {
-            let val = document.getElementById('favAccountSelect').value;
-            if (val) {
-                let parts = val.split('|');
-                document.getElementById('bankId').value = parts[0];
-                document.getElementById('accNo').value = parts[1];
+        function renderDashboard(dashData) {
+            document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense) + " ₫";
+            
+            function generateBars(dataObj) {
+                if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>Chưa có dữ liệu</p>";
+                let html = "";
+                for (let [name, val] of Object.entries(dataObj)) {
+                    let pct = dashData.totalExpense > 0 ? (val / dashData.totalExpense * 100).toFixed(1) : 0;
+                    html += `
+                    <div class="progress-bar-container">
+                        <div class="progress-label"><span>${name}</span><span>${formatNumber(val)} ₫</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div>
+                    </div>`;
+                }
+                return html;
             }
+            
+            document.getElementById('dashCategoryList').innerHTML = generateBars(dashData.categories);
+            document.getElementById('dashUnitList').innerHTML = generateBars(dashData.units);
         }
 
         function toggleTransferFields() {
             let txType = document.getElementById('txType').value;
             let toBankGroup = document.getElementById('toBankGroup');
             let fromBankLabel = document.getElementById('fromBankLabel');
+            let statementPeriodGroup = document.getElementById('statementPeriodGroup');
 
             if (txType === 'Transfer') {
                 toBankGroup.style.display = 'block';
                 fromBankLabel.innerText = 'From Bank (Chuyển TỪ quỹ)';
+                statementPeriodGroup.style.display = 'none'; // Thường chuyển nội bộ không gắn với thẻ TD
             } else {
                 toBankGroup.style.display = 'none';
-                fromBankLabel.innerText = (txType === 'Income') ? 'To Bank (Thu VÀO quỹ)' : 'From Bank (Chi TỪ quỹ)';
+                fromBankLabel.innerText = (txType === 'Income') ? 'To Bank (Thu VÀO quỹ)' : 'From Bank (Chi TỪ quỹ/thẻ)';
+                statementPeriodGroup.style.display = (txType === 'Expense') ? 'block' : 'none';
             }
         }
 
@@ -324,23 +313,18 @@
             let c = document.getElementById('categorySelect').value || "C";
             let d = new Date();
             let date = d.getFullYear().toString().slice(-2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-            document.getElementById('accountingMemo').value = `${v} ${u} ${c} ${date}`;
+            document.getElementById('accountingMemo').value = `${v}_${u}_${c}_${date}`;
         }
 
         function copyAccountingMemo() {
             let copyText = document.getElementById("accountingMemo");
             let btn = document.getElementById("btnCopyMemo");
-            
             navigator.clipboard.writeText(copyText.value).then(() => {
-                btn.innerText = "Copied!";
+                btn.innerText = "Đã Copy!";
                 btn.style.background = "var(--success-color)";
                 btn.style.color = "white";
-                setTimeout(() => {
-                    btn.innerText = "Copy";
-                    btn.style.background = "#e5e7eb";
-                    btn.style.color = "var(--text-main)";
-                }, 2000);
-            }).catch(err => alert("Không thể copy: " + err));
+                setTimeout(() => { btn.innerText = "Copy"; btn.style.background = "#e5e7eb"; btn.style.color = "var(--text-main)"; }, 2000);
+            });
         }
 
         function processAll() {
@@ -352,13 +336,14 @@
                 accountNo: document.getElementById('accNo').value,
                 amount: rawAmount,
                 transferMemo: document.getElementById('transferMemo').value,
-                txType: document.getElementById('txType').value,      // UPDATE: Phân loại GD
+                txType: document.getElementById('txType').value,
                 fromBank: document.getElementById('fromBank').value,
-                toBank: document.getElementById('toBank').value,          // UPDATE: Tài khoản đích
+                toBank: document.getElementById('toBank').value,
+                statementPeriod: document.getElementById('statementPeriod').value, // Thêm kỳ thanh toán thẻ
                 vendor: document.getElementById('vendorSelect').value,
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
-                accountingMemo: document.getElementById('accountingMemo').value, // Lấy giá trị sau khi user có thể đã edit tay
+                accountingMemo: document.getElementById('accountingMemo').value,
                 rawText: rawQrText
             };
 
@@ -380,23 +365,8 @@
         function openBankApp() { if (currentAppScheme !== "none") window.location.href = currentAppScheme; }
 
         function parseVietQR(str) {
-            function tlv(s) {
-                let t = {}; let i = 0;
-                while (i < s.length) {
-                    let id = s.substr(i, 2), len = parseInt(s.substr(i + 2, 2)), val = s.substr(i + 4, len);
-                    t[id] = val; i += 4 + len;
-                } return t;
-            }
-            try {
-                let root = tlv(str);
-                let res = { bankId: "", accountNo: "", amount: root["54"] || "", message: "" };
-                if (root["38"]) {
-                    let m = tlv(root["38"]);
-                    if (m["01"]) { let b = tlv(m["01"]); res.bankId = b["00"]; res.accountNo = b["01"]; }
-                }
-                if (root["62"]) { let a = tlv(root["62"]); res.message = a["08"]; }
-                return res;
-            } catch (e) { return {}; }
+            function tlv(s) { let t = {}; let i = 0; while (i < s.length) { let id = s.substr(i, 2), len = parseInt(s.substr(i + 2, 2)), val = s.substr(i + 4, len); t[id] = val; i += 4 + len; } return t; }
+            try { let root = tlv(str); let res = { bankId: "", accountNo: "", amount: root["54"] || "", message: "" }; if (root["38"]) { let m = tlv(root["38"]); if (m["01"]) { let b = tlv(m["01"]); res.bankId = b["00"]; res.accountNo = b["01"]; } } if (root["62"]) { let a = tlv(root["62"]); res.message = a["08"]; } return res; } catch (e) { return {}; }
         }
     </script>
 </body>
