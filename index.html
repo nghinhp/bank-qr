@@ -55,13 +55,16 @@
         .date-filter-group { display: flex; gap: 8px; margin-bottom: 16px; align-items: center;}
         .date-filter-group input[type="date"] { padding: 12px; font-size: 14px !important; }
 
-        /* MỚI: Bảng báo cáo Account Balances */
+        /* Bảng báo cáo Account Balances & Total Row */
         .dash-table-container { overflow-x: auto; margin-bottom: 24px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); }
         .dash-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
         .dash-table th, .dash-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .dash-table th { background: #f9fafb; font-weight: 600; color: var(--text-muted); text-align: right; }
-        .dash-table th:first-child, .dash-table td:first-child { text-align: left; font-weight: 600; color: var(--text-main); position: sticky; left: 0; background: var(--card-bg); }
-        .dash-table tr:last-child td { border-bottom: none; }
+        .dash-table th:first-child, .dash-table td:first-child { text-align: left; font-weight: 600; color: var(--text-main); position: sticky; left: 0; background: var(--card-bg); z-index: 1; }
+        /* Style cho thẻ tfoot (Dòng Tổng) */
+        .dash-table tfoot td { font-weight: 800; background: #f3f4f6; color: var(--text-main); border-top: 2px solid #9ca3af; border-bottom: none; }
+        .dash-table tfoot td:first-child { background: #f3f4f6; z-index: 2; }
+        
         .text-green { color: var(--success-color); }
         .text-red { color: var(--danger-color); }
 
@@ -146,6 +149,7 @@
                         </tr>
                     </thead>
                     <tbody id="dashAccountList"></tbody>
+                    <tfoot id="dashAccountTotal"></tfoot>
                 </table>
             </div>
 
@@ -300,7 +304,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; 
+        const GAS_URL = "YOUR_GAS_URL_HERE"; // Update your URL
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
@@ -488,27 +492,22 @@
 
             filteredTransactions = allTransactions.filter(t => t.date >= startTime && t.date <= endTime);
 
-            // LOGIC MỚI CHO ACCOUNT BALANCES & DASHBOARD
             let dashData = { totalExpense: 0, categories: {}, units: {}, accounts: {} };
             
             allTransactions.forEach(t => {
-                // Khởi tạo Account object
                 if (!dashData.accounts[t.account]) {
                     dashData.accounts[t.account] = { opening: 0, inflow: 0, outflow: 0, ending: 0 };
                 }
                 
                 let acc = dashData.accounts[t.account];
 
-                // Tính Opening (Trái thời gian lọc)
                 if (t.date < startTime) {
                     acc.opening += t.amount;
                 } 
-                // Tính In/Out (Trong thời gian lọc)
                 else if (t.date >= startTime && t.date <= endTime) {
                     if (t.amount > 0) acc.inflow += t.amount;
                     else acc.outflow += Math.abs(t.amount);
                     
-                    // Phân loại chi phí (Chỉ tính những giao dịch thực sự là Expense)
                     if (t.txType === "Expense") {
                         let expAmt = Math.abs(t.amount);
                         dashData.totalExpense += expAmt;
@@ -518,7 +517,6 @@
                 }
             });
 
-            // Tính Ending Balance = Opening + In - Out
             for (let k in dashData.accounts) {
                 dashData.accounts[k].ending = dashData.accounts[k].opening + dashData.accounts[k].inflow - dashData.accounts[k].outflow;
             }
@@ -527,13 +525,20 @@
         }
 
         function renderDashboard(dashData) {
-            // Render Bảng Accounts
             let accHtml = "";
+            
+            // MỚI: Biến tổng hợp cho Total Row
+            let t_open = 0, t_in = 0, t_out = 0, t_end = 0;
+
             for (let accName in dashData.accounts) {
                 let a = dashData.accounts[accName];
-                // Ẩn nếu tài khoản không có dữ liệu gì (0)
                 if (a.opening === 0 && a.inflow === 0 && a.outflow === 0 && a.ending === 0) continue;
                 
+                t_open += a.opening;
+                t_in += a.inflow;
+                t_out += a.outflow;
+                t_end += a.ending;
+
                 accHtml += `<tr>
                     <td>${accName}</td>
                     <td>${formatNumber(a.opening)}</td>
@@ -542,10 +547,26 @@
                     <td style="font-weight:bold;">${formatNumber(a.ending)}</td>
                 </tr>`;
             }
+            
             document.getElementById('dashAccountList').innerHTML = accHtml || "<tr><td colspan='5' style='text-align:center;'>No data</td></tr>";
 
-            // Render Biểu đồ Expense
+            // Hiển thị Dòng Tổng
+            if (accHtml !== "") {
+                document.getElementById('dashAccountTotal').innerHTML = `
+                    <tr>
+                        <td>TOTAL</td>
+                        <td>${formatNumber(t_open)}</td>
+                        <td class="text-green">${formatNumber(t_in)}</td>
+                        <td class="text-red">${formatNumber(t_out)}</td>
+                        <td>${formatNumber(t_end)}</td>
+                    </tr>
+                `;
+            } else {
+                document.getElementById('dashAccountTotal').innerHTML = "";
+            }
+
             document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense);
+            
             function generateBars(dataObj) {
                 if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data in range</p>";
                 let html = "";
