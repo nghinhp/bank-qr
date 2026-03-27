@@ -150,7 +150,7 @@
 
             <div class="form-group">
                 <label id="fromBankLabel">From Bank</label>
-                <input type="text" id="fromBank" placeholder="e.g., Cash, VCB...">
+                <select id="fromBank"></select>
             </div>
 
             <div class="form-group" id="statementPeriodGroup">
@@ -161,7 +161,7 @@
 
             <div class="form-group" id="toBankGroup" style="display: none;">
                 <label>To Bank</label>
-                <input type="text" id="toBank" placeholder="e.g., Cash, VCB...">
+                <select id="toBank"></select>
             </div>
 
             <div class="form-group">
@@ -187,6 +187,14 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Timezone Setting</label>
+                <select id="tzSelect" style="background: var(--bg-color);">
+                    <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (Vietnam)</option>
+                    <option value="America/Chicago">America/Chicago (US Central)</option>
+                </select>
+            </div>
+
             <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
             <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
@@ -204,7 +212,7 @@
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
-        let allTransactions = []; // Store raw dashboard data
+        let allTransactions = []; 
 
         function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
@@ -217,7 +225,7 @@
         window.onload = function() { 
             loadData(); 
             initScanner(); 
-            setDashToThisMonth(); // Default filter
+            setDashToThisMonth(); 
         };
 
         function switchMode(mode) {
@@ -235,7 +243,7 @@
                 document.getElementById('btnDashboardMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('dashboard-section').style.display = 'block';
-                applyDashFilter(); // Re-render when opened
+                applyDashFilter(); 
             } else {
                 location.reload(); 
             }
@@ -266,13 +274,18 @@
         function loadData() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
+                
+                // POPULATE FROM / TO BANK USING MAINS
+                fill('fromBank', data.mains, "Select Source Bank");
+                fill('toBank', data.mains, "Select Destination Bank");
+                
                 fill('vendorSelect', data.vendors, "Select Vendor");
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
                 
                 if(data.transactions) {
                     allTransactions = data.transactions;
-                    applyDashFilter(); // Render dashboard data
+                    applyDashFilter(); 
                 }
                 updateAccountingMemo();
                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -291,8 +304,15 @@
             let firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
             let lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             
-            document.getElementById('dashStartDate').value = firstDay.toISOString().split('T')[0];
-            document.getElementById('dashEndDate').value = lastDay.toISOString().split('T')[0];
+            // Need formatting due to timezone differences avoiding off-by-one day bugs
+            const formatDateLocal = (date) => {
+                const offset = date.getTimezoneOffset();
+                date = new Date(date.getTime() - (offset*60*1000));
+                return date.toISOString().split('T')[0];
+            };
+
+            document.getElementById('dashStartDate').value = formatDateLocal(firstDay);
+            document.getElementById('dashEndDate').value = formatDateLocal(lastDay);
             applyDashFilter();
         }
 
@@ -323,7 +343,10 @@
             function generateBars(dataObj) {
                 if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data</p>";
                 let html = "";
-                for (let [name, val] of Object.entries(dataObj)) {
+                // Sort by highest value
+                let sortedEntries = Object.entries(dataObj).sort((a,b) => b[1] - a[1]);
+                
+                for (let [name, val] of sortedEntries) {
                     let pct = dashData.totalExpense > 0 ? (val / dashData.totalExpense * 100).toFixed(1) : 0;
                     html += `
                     <div class="progress-bar-container">
@@ -393,6 +416,7 @@
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
                 accountingMemo: document.getElementById('accountingMemo').value,
+                timezone: document.getElementById('tzSelect').value, // PASSING TIMEZONE
                 rawText: rawQrText
             };
 
