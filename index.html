@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Kế Toán">
+    <meta name="apple-mobile-web-app-title" content="Ledger">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
-    <title>QUICK PAYMENT & LEDGER</title>
+    <title>PAYMENT & LEDGER</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -20,7 +20,6 @@
         .main-wrapper { max-width: 600px; margin: 0 auto; width: 100%; }
         h2 { font-size: 24px; font-weight: 700; margin: 20px 0 20px; letter-spacing: -0.5px; }
 
-        /* Nút Tab chia 3 */
         .mode-selector { display: flex; gap: 8px; margin-bottom: 24px; }
         .mode-btn { flex: 1; padding: 16px 5px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 12px; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
         .mode-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
@@ -52,6 +51,11 @@
         .progress-track { background: #e5e7eb; border-radius: 8px; height: 10px; overflow: hidden; }
         .progress-fill { background: var(--primary-color); height: 100%; border-radius: 8px; }
 
+        /* Date Filter UI */
+        .date-filter-group { display: flex; gap: 8px; margin-bottom: 16px; align-items: center;}
+        .date-filter-group input[type="date"] { padding: 12px; font-size: 14px !important; }
+        .btn-filter { background: var(--primary-color); color: white; border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; white-space: nowrap;}
+
         #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -61,95 +65,103 @@
 
     <div id="loadingOverlay">
         <div class="spinner"></div>
-        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Đang đồng bộ...</p>
+        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Syncing Data...</p>
     </div>
 
     <div class="main-wrapper">
-        <h2>App Kế Toán</h2>
+        <h2>Payment & Ledger</h2>
 
         <div class="mode-selector">
-            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Quét QR</button>
-            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Nhập Tay</button>
-            <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Báo Cáo</button>
+            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan QR</button>
+            <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Manual</button>
+            <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Dashboard</button>
         </div>
         
         <div id="scan-section">
             <div id="reader"></div>
-            <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Đưa camera vào mã QR</p>
+            <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Point camera at QR code</p>
         </div>
 
         <div id="dashboard-section" class="container">
-            <h3 class="section-title">Chi Phí Tháng Này</h3>
+            <h3 class="section-title">Expense Overview</h3>
+            
+            <div class="date-filter-group">
+                <input type="date" id="dashStartDate" onchange="applyDashFilter()">
+                <span style="font-weight:bold; color:var(--text-muted);">to</span>
+                <input type="date" id="dashEndDate" onchange="applyDashFilter()">
+            </div>
+            <button class="btn-filter" style="width: 100%; margin-bottom: 20px;" onclick="setDashToThisMonth()">Filter: This Month</button>
+
             <div class="dash-card">
-                <p style="margin: 0; font-weight: 600; color: var(--text-muted);">TỔNG CHI</p>
-                <h2 class="dash-total" id="dashTotalValue">0 ₫</h2>
+                <p style="margin: 0; font-weight: 600; color: var(--text-muted);">TOTAL EXPENSE</p>
+                <h2 class="dash-total" id="dashTotalValue">0</h2>
             </div>
             
-            <h3 class="section-title">Theo Hạng Mục (Category)</h3>
-            <div id="dashCategoryList">Tải dữ liệu...</div>
+            <h3 class="section-title">By Category</h3>
+            <div id="dashCategoryList">Loading...</div>
 
-            <h3 class="section-title">Theo Đơn Vị (Unit)</h3>
-            <div id="dashUnitList">Tải dữ liệu...</div>
+            <h3 class="section-title">By Unit</h3>
+            <div id="dashUnitList">Loading...</div>
         </div>
 
         <div id="form-container" class="container">
-            <h3 class="section-title">Ngân hàng & Số tiền</h3>
+            <h3 class="section-title">Amount & Bank Info</h3>
             <div class="form-group">
-                <label>Số tiền (VNĐ)</label>
+                <label>Amount</label>
                 <input type="text" id="amountInput" placeholder="0" inputmode="numeric" oninput="handleAmountInput(this)">
                 <span id="amountDisplay">0</span>
             </div>
 
             <div class="form-group">
-                <label>Nội dung QR</label>
-                <input type="text" id="transferMemo" placeholder="Nhập ghi chú">
+                <label>Transfer Memo</label>
+                <input type="text" id="transferMemo" placeholder="Enter memo">
             </div>
 
             <div id="manual-bank-info" style="display:none;">
                 <div class="form-group">
-                    <label>Số tài khoản người nhận</label>
-                    <input type="text" id="accNo" placeholder="STK">
+                    <label>Receiver Account No.</label>
+                    <input type="text" id="accNo" placeholder="Account Number">
                 </div>
                 <div class="form-group">
-                    <label>Mã Ngân hàng (BIN)</label>
-                    <input type="text" id="bankId" placeholder="Ví dụ: 970436">
+                    <label>Receiver Bank ID (BIN)</label>
+                    <input type="text" id="bankId" placeholder="e.g., 970436">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Mở App Ngân hàng</label>
+                <label>Open Banking App</label>
                 <select id="appSelect">
-                    <option value="none">Không mở app</option>
+                    <option value="none">Do not open app</option>
                     <option value="techcombankmobile://">Techcombank</option>
                     <option value="acbapp://">ACB ONE</option>
                     <option value="sacombankpay://">Sacombank Pay</option>
                 </select>
             </div>
 
-            <h3 class="section-title">Hạch Toán Chi Phí</h3>
+            <h3 class="section-title">Accounting Details</h3>
             <div class="form-group">
-                <label>Loại Giao Dịch</label>
+                <label>Transaction Type</label>
                 <select id="txType" onchange="toggleTransferFields()">
-                    <option value="Expense">Expense (Chi tiền)</option>
-                    <option value="Income">Income (Thu tiền)</option>
-                    <option value="Transfer">Transfer (Chuyển nội bộ)</option>
+                    <option value="Expense">Expense</option>
+                    <option value="Income">Income</option>
+                    <option value="Transfer">Transfer</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label id="fromBankLabel">From Bank (Chi từ quỹ/thẻ)</label>
-                <input type="text" id="fromBank" placeholder="Ví dụ: Tien mat, VCB...">
+                <label id="fromBankLabel">From Bank</label>
+                <input type="text" id="fromBank" placeholder="e.g., Cash, VCB...">
             </div>
 
             <div class="form-group" id="statementPeriodGroup">
-                <label>Kỳ thanh toán thẻ (Tùy chọn)</label>
+                <label>Statement Period (Optional)</label>
                 <input type="month" id="statementPeriod" style="background: var(--bg-color);">
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">*Chỉ áp dụng khi chi từ Thẻ Tín Dụng</p>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">*Applicable for Credit Cards</p>
             </div>
 
             <div class="form-group" id="toBankGroup" style="display: none;">
-                <label>To Bank (Chuyển đến quỹ)</label>
-                <input type="text" id="toBank" placeholder="Ví dụ: Tien mat, VCB...">
+                <label>To Bank</label>
+                <input type="text" id="toBank" placeholder="e.g., Cash, VCB...">
             </div>
 
             <div class="form-group">
@@ -168,22 +180,22 @@
             </div>
 
             <div class="form-group">
-                <label>Mã Hạch Toán Nội Bộ</label>
+                <label>Internal Accounting Code</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="accountingMemo" style="background: var(--bg-color); flex: 1;">
                     <button type="button" id="btnCopyMemo" class="btn-copy" onclick="copyAccountingMemo()">Copy</button>
                 </div>
             </div>
 
-            <button class="btn-main" id="btnAction" onclick="processAll()">Lưu & Tạo QR</button>
-            <button class="btn-text" onclick="location.reload()">Hủy bỏ</button>
+            <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
+            <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
 
         <div id="result-container" class="container" style="text-align:center;">
-            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Đã Xong!</h3>
+            <h3 style="color: var(--success-color); font-size: 24px; margin-top: 0;">Completed!</h3>
             <img id="finalQrImg" src="" style="width:100%; max-width:280px; margin: 32px auto; border: 1px solid var(--border-color); border-radius: 16px; padding: 10px;">
-            <button class="btn-main btn-success" onclick="openBankApp()">Mở App Ngân Hàng</button>
-            <button class="btn-text" onclick="location.reload()">Quét mã khác</button>
+            <button class="btn-main btn-success" onclick="openBankApp()">Open Banking App</button>
+            <button class="btn-text" onclick="location.reload()">Scan New QR</button>
         </div>
     </div>
 
@@ -192,6 +204,7 @@
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
+        let allTransactions = []; // Store raw dashboard data
 
         function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
@@ -201,7 +214,11 @@
             document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0";
         }
 
-        window.onload = function() { loadDashboardAndData(); initScanner(); };
+        window.onload = function() { 
+            loadData(); 
+            initScanner(); 
+            setDashToThisMonth(); // Default filter
+        };
 
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
@@ -218,6 +235,7 @@
                 document.getElementById('btnDashboardMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('dashboard-section').style.display = 'block';
+                applyDashFilter(); // Re-render when opened
             } else {
                 location.reload(); 
             }
@@ -245,20 +263,18 @@
             updateAccountingMemo();
         }
 
-        function loadDashboardAndData() {
+        function loadData() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
-                // Load Dropdowns
-                fill('vendorSelect', data.vendors, "Chọn Vendor");
-                fill('unitSelect', data.units, "Chọn Unit");
-                fill('categorySelect', data.categories, "Chọn Category");
-                updateAccountingMemo();
-
-                // Render Dashboard
-                if (data.dashboard) {
-                    renderDashboard(data.dashboard);
+                fill('vendorSelect', data.vendors, "Select Vendor");
+                fill('unitSelect', data.units, "Select Unit");
+                fill('categorySelect', data.categories, "Select Category");
+                
+                if(data.transactions) {
+                    allTransactions = data.transactions;
+                    applyDashFilter(); // Render dashboard data
                 }
-
+                updateAccountingMemo();
                 document.getElementById('loadingOverlay').style.display = 'none';
             }).catch(() => document.getElementById('loadingOverlay').style.display = 'none');
         }
@@ -269,17 +285,49 @@
             if(list) list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
         }
 
+        // --- DASHBOARD FILTER LOGIC ---
+        function setDashToThisMonth() {
+            let now = new Date();
+            let firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            let lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('dashStartDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('dashEndDate').value = lastDay.toISOString().split('T')[0];
+            applyDashFilter();
+        }
+
+        function applyDashFilter() {
+            if(allTransactions.length === 0) return;
+
+            let startVal = document.getElementById('dashStartDate').value;
+            let endVal = document.getElementById('dashEndDate').value;
+            
+            let startTime = startVal ? new Date(startVal).setHours(0,0,0,0) : 0;
+            let endTime = endVal ? new Date(endVal).setHours(23,59,59,999) : new Date().getTime();
+
+            let filtered = allTransactions.filter(t => t.date >= startTime && t.date <= endTime);
+
+            let dashData = { totalExpense: 0, categories: {}, units: {} };
+            filtered.forEach(t => {
+                dashData.totalExpense += t.amount;
+                dashData.categories[t.category] = (dashData.categories[t.category] || 0) + t.amount;
+                dashData.units[t.unit] = (dashData.units[t.unit] || 0) + t.amount;
+            });
+
+            renderDashboard(dashData);
+        }
+
         function renderDashboard(dashData) {
-            document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense) + " ₫";
+            document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense);
             
             function generateBars(dataObj) {
-                if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>Chưa có dữ liệu</p>";
+                if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data</p>";
                 let html = "";
                 for (let [name, val] of Object.entries(dataObj)) {
                     let pct = dashData.totalExpense > 0 ? (val / dashData.totalExpense * 100).toFixed(1) : 0;
                     html += `
                     <div class="progress-bar-container">
-                        <div class="progress-label"><span>${name}</span><span>${formatNumber(val)} ₫</span></div>
+                        <div class="progress-label"><span>${name}</span><span>${formatNumber(val)}</span></div>
                         <div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div>
                     </div>`;
                 }
@@ -290,6 +338,7 @@
             document.getElementById('dashUnitList').innerHTML = generateBars(dashData.units);
         }
 
+        // --- FORM LOGIC ---
         function toggleTransferFields() {
             let txType = document.getElementById('txType').value;
             let toBankGroup = document.getElementById('toBankGroup');
@@ -298,11 +347,11 @@
 
             if (txType === 'Transfer') {
                 toBankGroup.style.display = 'block';
-                fromBankLabel.innerText = 'From Bank (Chuyển TỪ quỹ)';
-                statementPeriodGroup.style.display = 'none'; // Thường chuyển nội bộ không gắn với thẻ TD
+                fromBankLabel.innerText = 'From Bank';
+                statementPeriodGroup.style.display = 'none'; 
             } else {
                 toBankGroup.style.display = 'none';
-                fromBankLabel.innerText = (txType === 'Income') ? 'To Bank (Thu VÀO quỹ)' : 'From Bank (Chi TỪ quỹ/thẻ)';
+                fromBankLabel.innerText = (txType === 'Income') ? 'To Bank' : 'From Bank';
                 statementPeriodGroup.style.display = (txType === 'Expense') ? 'block' : 'none';
             }
         }
@@ -320,7 +369,7 @@
             let copyText = document.getElementById("accountingMemo");
             let btn = document.getElementById("btnCopyMemo");
             navigator.clipboard.writeText(copyText.value).then(() => {
-                btn.innerText = "Đã Copy!";
+                btn.innerText = "Copied!";
                 btn.style.background = "var(--success-color)";
                 btn.style.color = "white";
                 setTimeout(() => { btn.innerText = "Copy"; btn.style.background = "#e5e7eb"; btn.style.color = "var(--text-main)"; }, 2000);
@@ -339,7 +388,7 @@
                 txType: document.getElementById('txType').value,
                 fromBank: document.getElementById('fromBank').value,
                 toBank: document.getElementById('toBank').value,
-                statementPeriod: document.getElementById('statementPeriod').value, // Thêm kỳ thanh toán thẻ
+                statementPeriod: document.getElementById('statementPeriod').value,
                 vendor: document.getElementById('vendorSelect').value,
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
