@@ -55,7 +55,16 @@
         .date-filter-group { display: flex; gap: 8px; margin-bottom: 16px; align-items: center;}
         .date-filter-group input[type="date"] { padding: 12px; font-size: 14px !important; }
 
-        /* Accordion Style cho Receiver Account */
+        /* MỚI: Bảng báo cáo Account Balances */
+        .dash-table-container { overflow-x: auto; margin-bottom: 24px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); }
+        .dash-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
+        .dash-table th, .dash-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .dash-table th { background: #f9fafb; font-weight: 600; color: var(--text-muted); text-align: right; }
+        .dash-table th:first-child, .dash-table td:first-child { text-align: left; font-weight: 600; color: var(--text-main); position: sticky; left: 0; background: var(--card-bg); }
+        .dash-table tr:last-child td { border-bottom: none; }
+        .text-green { color: var(--success-color); }
+        .text-red { color: var(--danger-color); }
+
         .accordion-header { background: #e5e7eb; color: var(--text-main); padding: 14px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; margin-bottom: 8px; transition: all 0.2s; text-align: center; }
         .accordion-body { padding: 16px; border: 1px dashed var(--border-color); border-radius: 12px; margin-bottom: 24px; background: #fafafa; }
         
@@ -104,8 +113,7 @@
         </div>
 
         <div id="dashboard-section" class="container">
-            <h3 class="section-title">Expense Overview</h3>
-            
+            <h3 class="section-title">Date Filter</h3>
             <div class="form-group">
                 <select id="quickFilter" onchange="applyQuickFilter()">
                     <option value="this_month">This Month</option>
@@ -119,22 +127,37 @@
                     <option value="custom">-- Custom Date Range --</option>
                 </select>
             </div>
-
             <div class="date-filter-group" id="customDateGroup" style="display:none;">
                 <input type="date" id="dashStartDate" onchange="applyDashFilter()">
                 <span style="font-weight:bold; color:var(--text-muted);">to</span>
                 <input type="date" id="dashEndDate" onchange="applyDashFilter()">
             </div>
 
+            <h3 class="section-title">Account Balances</h3>
+            <div class="dash-table-container">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Opening</th>
+                            <th>In</th>
+                            <th>Out</th>
+                            <th>Ending</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashAccountList"></tbody>
+                </table>
+            </div>
+
+            <h3 class="section-title">Total Expense</h3>
             <div class="dash-card">
-                <p style="margin: 0; font-weight: 600; color: var(--text-muted);">TOTAL EXPENSE</p>
                 <h2 class="dash-total" id="dashTotalValue">0</h2>
             </div>
             
-            <h3 class="section-title">By Category</h3>
+            <h3 class="section-title">By Category (Expense Only)</h3>
             <div id="dashCategoryList">Loading...</div>
 
-            <h3 class="section-title">By Unit</h3>
+            <h3 class="section-title">By Unit (Expense Only)</h3>
             <div id="dashUnitList">Loading...</div>
 
             <button class="btn-export" onclick="pushToSheet()">📤 Push Report to Google Sheets</button>
@@ -142,7 +165,6 @@
 
         <div id="loan-section" class="container">
             <h3 class="section-title">Loan / Debt Tracking</h3>
-            
             <div class="form-group">
                 <label>Transaction Type</label>
                 <select id="loanTxType">
@@ -150,34 +172,28 @@
                     <option value="Lend">I Lent Money (Money OUT)</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Contact Person / Entity</label>
                 <input type="text" id="loanContact" placeholder="Who did you borrow from / lend to?">
             </div>
-
             <div class="form-group">
                 <label>Principal Amount</label>
                 <input type="text" id="loanAmountInput" placeholder="0" inputmode="numeric" oninput="handleLoanAmountInput(this)">
                 <span id="loanAmountDisplay">0</span>
             </div>
-
             <div class="form-group">
                 <label>Target Bank Account</label>
                 <select id="loanBank"></select>
                 <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Which account received or sent the money?</p>
             </div>
-
             <div class="form-group">
                 <label>Due Date</label>
                 <input type="date" id="loanDueDate">
             </div>
-
             <div class="form-group">
                 <label>Notes</label>
                 <input type="text" id="loanMemo" placeholder="Contract details, interest rate, etc.">
             </div>
-
             <button class="btn-main" id="btnLoanAction" onclick="processLoan()">Record Loan</button>
             <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
@@ -206,7 +222,6 @@
                         <option value="">-- Choose or Enter Manually below --</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Receiver Account No.</label>
                     <input type="text" id="accNo" placeholder="Account Number">
@@ -244,7 +259,6 @@
             <div class="form-group" id="statementPeriodGroup">
                 <label>Statement Period (Optional)</label>
                 <input type="month" id="statementPeriod">
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">*Applicable for Credit Cards</p>
             </div>
 
             <div class="form-group" id="toBankGroup" style="display: none;">
@@ -256,12 +270,10 @@
                 <label>Vendor</label>
                 <select id="vendorSelect" onchange="updateAccountingMemo()"></select>
             </div>
-            
             <div class="form-group">
                 <label>Unit</label>
                 <select id="unitSelect" onchange="updateAccountingMemo()"></select>
             </div>
-            
             <div class="form-group">
                 <label>Category</label>
                 <select id="categorySelect" onchange="updateAccountingMemo()"></select>
@@ -296,33 +308,19 @@
         let filteredTransactions = []; 
 
         function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
-
-        function handleAmountInput(input) {
-            let val = input.value.replace(/\D/g, ""); 
-            input.value = formatNumber(val); 
-            document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0";
-        }
-        
-        function handleLoanAmountInput(input) {
-            let val = input.value.replace(/\D/g, ""); 
-            input.value = formatNumber(val); 
-            document.getElementById('loanAmountDisplay').innerText = val ? formatNumber(val) : "0";
-        }
+        function handleAmountInput(input) { let val = input.value.replace(/\D/g, ""); input.value = formatNumber(val); document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0"; }
+        function handleLoanAmountInput(input) { let val = input.value.replace(/\D/g, ""); input.value = formatNumber(val); document.getElementById('loanAmountDisplay').innerText = val ? formatNumber(val) : "0"; }
 
         window.onload = function() { 
             let savedTz = localStorage.getItem("app_timezone");
             if (savedTz) document.getElementById("tzSelect").value = savedTz;
-
             loadData(); 
             initScanner(); 
             applyQuickFilter(); 
         };
 
-        function saveTimezone() {
-            localStorage.setItem("app_timezone", document.getElementById("tzSelect").value);
-        }
+        function saveTimezone() { localStorage.setItem("app_timezone", document.getElementById("tzSelect").value); }
 
-        // --- ACCORDION LOGIC ---
         function toggleBankInfo(forceState) {
             let el = document.getElementById('manual-bank-info');
             let header = document.getElementById('bankInfoHeader');
@@ -353,7 +351,7 @@
                 document.getElementById('btnManualMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('form-container').style.display = 'block';
-                toggleBankInfo('hide'); // Mặc định đóng lại cho gọn
+                toggleBankInfo('hide'); 
             } else if (mode === 'dashboard') {
                 document.getElementById('btnDashboardMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
@@ -392,7 +390,7 @@
             document.getElementById('scan-section').style.display = 'none';
             document.getElementById('form-container').style.display = 'block';
             
-            toggleBankInfo('show'); // Tự động mở ra khi quét xong để xác nhận
+            toggleBankInfo('show'); 
             updateAccountingMemo();
         }
 
@@ -406,7 +404,6 @@
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
                 
-                // PHỤC HỒI FAVORITE ACCOUNT LOGIC
                 if (data.favAccounts && data.favAccounts.length > 0) {
                     let favSelect = document.getElementById('favAccountSelect');
                     data.favAccounts.forEach(acc => {
@@ -491,19 +488,64 @@
 
             filteredTransactions = allTransactions.filter(t => t.date >= startTime && t.date <= endTime);
 
-            let dashData = { totalExpense: 0, categories: {}, units: {} };
-            filteredTransactions.forEach(t => {
-                dashData.totalExpense += t.amount;
-                dashData.categories[t.category] = (dashData.categories[t.category] || 0) + t.amount;
-                dashData.units[t.unit] = (dashData.units[t.unit] || 0) + t.amount;
+            // LOGIC MỚI CHO ACCOUNT BALANCES & DASHBOARD
+            let dashData = { totalExpense: 0, categories: {}, units: {}, accounts: {} };
+            
+            allTransactions.forEach(t => {
+                // Khởi tạo Account object
+                if (!dashData.accounts[t.account]) {
+                    dashData.accounts[t.account] = { opening: 0, inflow: 0, outflow: 0, ending: 0 };
+                }
+                
+                let acc = dashData.accounts[t.account];
+
+                // Tính Opening (Trái thời gian lọc)
+                if (t.date < startTime) {
+                    acc.opening += t.amount;
+                } 
+                // Tính In/Out (Trong thời gian lọc)
+                else if (t.date >= startTime && t.date <= endTime) {
+                    if (t.amount > 0) acc.inflow += t.amount;
+                    else acc.outflow += Math.abs(t.amount);
+                    
+                    // Phân loại chi phí (Chỉ tính những giao dịch thực sự là Expense)
+                    if (t.txType === "Expense") {
+                        let expAmt = Math.abs(t.amount);
+                        dashData.totalExpense += expAmt;
+                        dashData.categories[t.category] = (dashData.categories[t.category] || 0) + expAmt;
+                        dashData.units[t.unit] = (dashData.units[t.unit] || 0) + expAmt;
+                    }
+                }
             });
+
+            // Tính Ending Balance = Opening + In - Out
+            for (let k in dashData.accounts) {
+                dashData.accounts[k].ending = dashData.accounts[k].opening + dashData.accounts[k].inflow - dashData.accounts[k].outflow;
+            }
 
             renderDashboard(dashData);
         }
 
         function renderDashboard(dashData) {
+            // Render Bảng Accounts
+            let accHtml = "";
+            for (let accName in dashData.accounts) {
+                let a = dashData.accounts[accName];
+                // Ẩn nếu tài khoản không có dữ liệu gì (0)
+                if (a.opening === 0 && a.inflow === 0 && a.outflow === 0 && a.ending === 0) continue;
+                
+                accHtml += `<tr>
+                    <td>${accName}</td>
+                    <td>${formatNumber(a.opening)}</td>
+                    <td class="text-green">${formatNumber(a.inflow)}</td>
+                    <td class="text-red">${formatNumber(a.outflow)}</td>
+                    <td style="font-weight:bold;">${formatNumber(a.ending)}</td>
+                </tr>`;
+            }
+            document.getElementById('dashAccountList').innerHTML = accHtml || "<tr><td colspan='5' style='text-align:center;'>No data</td></tr>";
+
+            // Render Biểu đồ Expense
             document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense);
-            
             function generateBars(dataObj) {
                 if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data in range</p>";
                 let html = "";
@@ -514,7 +556,6 @@
                 }
                 return html;
             }
-            
             document.getElementById('dashCategoryList').innerHTML = generateBars(dashData.categories);
             document.getElementById('dashUnitList').innerHTML = generateBars(dashData.units);
         }
@@ -524,7 +565,6 @@
                 alert("No data available to push for this period.");
                 return;
             }
-            
             document.getElementById('loadingText').innerText = "Pushing to Sheet...";
             document.getElementById('loadingOverlay').style.display = 'flex';
             
@@ -548,7 +588,6 @@
                 alert("Please fill in Contact, Amount, and Target Bank.");
                 return;
             }
-
             document.getElementById('loadingText').innerText = "Recording Loan...";
             document.getElementById('loadingOverlay').style.display = 'flex';
 
