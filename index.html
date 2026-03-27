@@ -20,9 +20,8 @@
         .main-wrapper { max-width: 600px; margin: 0 auto; width: 100%; }
         h2 { font-size: 24px; font-weight: 700; margin: 20px 0 20px; letter-spacing: -0.5px; }
 
-        /* Navigation Tabs */
-        .mode-selector { display: flex; gap: 6px; margin-bottom: 24px; }
-        .mode-btn { flex: 1; padding: 14px 2px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 10px; font-weight: 700; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
+        .mode-selector { display: flex; gap: 6px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 5px;}
+        .mode-btn { flex: 1; min-width: 60px; padding: 14px 2px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 10px; font-weight: 700; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
         .mode-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #000; }
@@ -37,7 +36,7 @@
         input:focus, select:focus { border-color: var(--focus-ring); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; padding-right: 40px; }
 
-        #amountDisplay { font-size: 28px; font-weight: 700; color: var(--text-main); text-align: right; margin-top: 12px; display: block; letter-spacing: -0.5px; }
+        #amountDisplay, #loanAmountDisplay { font-size: 28px; font-weight: 700; color: var(--text-main); text-align: right; margin-top: 12px; display: block; letter-spacing: -0.5px; }
         
         .btn-main { width: 100%; padding: 20px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 16px; }
         .btn-success { background: var(--success-color); }
@@ -45,7 +44,6 @@
         .btn-text { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 15px; font-weight: 500; margin-top: 20px; cursor: pointer; }
         .btn-copy { padding: 0 20px; background: #e5e7eb; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--text-main); cursor: pointer; white-space: nowrap; }
 
-        /* Dashboard Styles */
         .dash-card { background: var(--bg-color); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 24px; border: 1px solid var(--border-color); }
         .dash-total { font-size: 32px; font-weight: 800; color: var(--danger-color); margin: 10px 0 0 0; }
         .progress-bar-container { margin-bottom: 16px; }
@@ -65,7 +63,7 @@
 
     <div id="loadingOverlay">
         <div class="spinner"></div>
-        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);">Syncing Data...</p>
+        <p style="margin-top:20px; font-weight:600; color: var(--text-muted);" id="loadingText">Syncing Data...</p>
     </div>
 
     <div class="main-wrapper">
@@ -74,6 +72,7 @@
         <div class="mode-selector">
             <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan</button>
             <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Manual</button>
+            <button id="btnLoanMode" class="mode-btn" onclick="switchMode('loan')">Loans</button>
             <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Dash</button>
             <button id="btnSettingsMode" class="mode-btn" onclick="switchMode('settings')">⚙️ Set</button>
         </div>
@@ -129,7 +128,49 @@
             <h3 class="section-title">By Unit</h3>
             <div id="dashUnitList">Loading...</div>
 
-            <button class="btn-export" onclick="exportToCSV()">📥 Export Filtered Data (CSV)</button>
+            <button class="btn-export" onclick="pushToSheet()">📤 Push Report to Google Sheets</button>
+        </div>
+
+        <div id="loan-section" class="container">
+            <h3 class="section-title">Loan / Debt Tracking</h3>
+            
+            <div class="form-group">
+                <label>Transaction Type</label>
+                <select id="loanTxType">
+                    <option value="Borrow">I Borrowed Money (Money IN)</option>
+                    <option value="Lend">I Lent Money (Money OUT)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Contact Person / Entity</label>
+                <input type="text" id="loanContact" placeholder="Who did you borrow from / lend to?">
+            </div>
+
+            <div class="form-group">
+                <label>Principal Amount</label>
+                <input type="text" id="loanAmountInput" placeholder="0" inputmode="numeric" oninput="handleLoanAmountInput(this)">
+                <span id="loanAmountDisplay">0</span>
+            </div>
+
+            <div class="form-group">
+                <label>Target Bank Account</label>
+                <select id="loanBank"></select>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Which account received or sent the money?</p>
+            </div>
+
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="loanDueDate">
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <input type="text" id="loanMemo" placeholder="Contract details, interest rate, etc.">
+            </div>
+
+            <button class="btn-main" id="btnLoanAction" onclick="processLoan()">Record Loan</button>
+            <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
 
         <div id="form-container" class="container">
@@ -228,12 +269,12 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // INSERT YOUR SCRIPT URL HERE
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; 
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
         let allTransactions = []; 
-        let filteredTransactions = []; // Used for export
+        let filteredTransactions = []; 
 
         function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
@@ -242,15 +283,20 @@
             input.value = formatNumber(val); 
             document.getElementById('amountDisplay').innerText = val ? formatNumber(val) : "0";
         }
+        
+        function handleLoanAmountInput(input) {
+            let val = input.value.replace(/\D/g, ""); 
+            input.value = formatNumber(val); 
+            document.getElementById('loanAmountDisplay').innerText = val ? formatNumber(val) : "0";
+        }
 
         window.onload = function() { 
-            // Load saved timezone
             let savedTz = localStorage.getItem("app_timezone");
             if (savedTz) document.getElementById("tzSelect").value = savedTz;
 
             loadData(); 
             initScanner(); 
-            applyQuickFilter(); // Sets default dates to 'This Month'
+            applyQuickFilter(); 
         };
 
         function saveTimezone() {
@@ -263,6 +309,7 @@
             document.getElementById('form-container').style.display = 'none';
             document.getElementById('dashboard-section').style.display = 'none';
             document.getElementById('settings-section').style.display = 'none';
+            document.getElementById('loan-section').style.display = 'none';
 
             if (mode === 'manual') {
                 document.getElementById('btnManualMode').classList.add('active');
@@ -278,6 +325,10 @@
                 document.getElementById('btnSettingsMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('settings-section').style.display = 'block';
+            } else if (mode === 'loan') {
+                document.getElementById('btnLoanMode').classList.add('active');
+                if (html5QrcodeScanner) html5QrcodeScanner.clear();
+                document.getElementById('loan-section').style.display = 'block';
             } else {
                 location.reload(); 
             }
@@ -310,6 +361,7 @@
             fetch(GAS_URL).then(r => r.json()).then(data => {
                 fill('fromBank', data.mains, "Select Source Bank");
                 fill('toBank', data.mains, "Select Destination Bank");
+                fill('loanBank', data.mains, "Select Target Bank Account");
                 fill('vendorSelect', data.vendors, "Select Vendor");
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
@@ -358,7 +410,6 @@
                 case 'last_year': start = new Date(y - 1, 0, 1); end = new Date(y - 1, 12, 0); break;
             }
 
-            // Fix timezone offset for inputs
             const formatDateLocal = (date) => {
                 const offset = date.getTimezoneOffset();
                 let d = new Date(date.getTime() - (offset*60*1000));
@@ -398,14 +449,9 @@
                 if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data in range</p>";
                 let html = "";
                 let sortedEntries = Object.entries(dataObj).sort((a,b) => b[1] - a[1]);
-                
                 for (let [name, val] of sortedEntries) {
                     let pct = dashData.totalExpense > 0 ? (val / dashData.totalExpense * 100).toFixed(1) : 0;
-                    html += `
-                    <div class="progress-bar-container">
-                        <div class="progress-label"><span>${name}</span><span>${formatNumber(val)}</span></div>
-                        <div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div>
-                    </div>`;
+                    html += `<div class="progress-bar-container"><div class="progress-label"><span>${name}</span><span>${formatNumber(val)}</span></div><div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div></div>`;
                 }
                 return html;
             }
@@ -414,32 +460,59 @@
             document.getElementById('dashUnitList').innerHTML = generateBars(dashData.units);
         }
 
-        // --- EXPORT TO CSV ---
-        function exportToCSV() {
+        // --- PUSH REPORT TO SHEET ---
+        function pushToSheet() {
             if (filteredTransactions.length === 0) {
-                alert("No data available to export for this period.");
+                alert("No data available to push for this period.");
                 return;
             }
             
-            // BOM needed for Excel to read UTF-8 correctly
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "Date,Amount,Unit,Category\n";
+            document.getElementById('loadingText').innerText = "Pushing to Sheet...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
             
-            filteredTransactions.forEach(t => {
-                let d = new Date(t.date).toLocaleDateString(); // Format based on phone locale
-                csvContent += `"${d}","${t.amount}","${t.unit}","${t.category}"\n`;
+            fetch(GAS_URL, { 
+                method: "POST", 
+                body: JSON.stringify({ action: "export", transactions: filteredTransactions }) 
+            })
+            .then(r => r.json())
+            .then(res => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("Successfully pushed to 'Report_Export' tab in Google Sheets!");
+            }).catch(err => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("Failed to push data.");
             });
-            
-            var encodedUri = encodeURI(csvContent);
-            var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Ledger_Export.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
 
-        // --- FORM LOGIC ---
+        // --- LOAN LOGIC ---
+        function processLoan() {
+            let rawAmount = document.getElementById('loanAmountInput').value.replace(/\D/g, "");
+            if (!rawAmount || !document.getElementById('loanBank').value || !document.getElementById('loanContact').value) {
+                alert("Please fill in Contact, Amount, and Target Bank.");
+                return;
+            }
+
+            document.getElementById('loadingText').innerText = "Recording Loan...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            let data = {
+                txType: document.getElementById('loanTxType').value,
+                contact: document.getElementById('loanContact').value,
+                amount: rawAmount,
+                fromBank: document.getElementById('loanBank').value, // Map target bank to fromBank for backend ledger
+                dueDate: document.getElementById('loanDueDate').value,
+                transferMemo: document.getElementById('loanMemo').value,
+                timezone: document.getElementById('tzSelect').value || "Asia/Ho_Chi_Minh"
+            };
+
+            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }).then(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("Loan recorded successfully!");
+                location.reload();
+            });
+        }
+
+        // --- GENERAL FORM LOGIC ---
         function toggleTransferFields() {
             let txType = document.getElementById('txType').value;
             let toBankGroup = document.getElementById('toBankGroup');
@@ -478,6 +551,7 @@
         }
 
         function processAll() {
+            document.getElementById('loadingText').innerText = "Processing...";
             document.getElementById('loadingOverlay').style.display = 'flex';
             let rawAmount = document.getElementById('amountInput').value.replace(/\D/g, "");
 
@@ -494,7 +568,7 @@
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
                 accountingMemo: document.getElementById('accountingMemo').value,
-                timezone: document.getElementById('tzSelect').value, // Send Timezone from settings
+                timezone: document.getElementById('tzSelect').value || "Asia/Ho_Chi_Minh",
                 rawText: rawQrText
             };
 
