@@ -58,6 +58,10 @@
         /* Accordion Style cho Receiver Account */
         .accordion-header { background: #e5e7eb; color: var(--text-main); padding: 14px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; margin-bottom: 8px; transition: all 0.2s; text-align: center; }
         .accordion-body { padding: 16px; border: 1px dashed var(--border-color); border-radius: 12px; margin-bottom: 24px; background: #fafafa; }
+        
+        #favAccountGroup { background: var(--highlight-bg); padding: 16px; border-radius: 12px; border: 1px dashed #93c5fd; margin-bottom: 24px; }
+        #favAccountGroup label { color: #1e3a8a; }
+        #favAccountGroup select { background-color: #fff; border-color: #bfdbfe; }
 
         #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
@@ -196,6 +200,13 @@
             </div>
             
             <div id="manual-bank-info" class="accordion-body" style="display:none;">
+                <div class="form-group" id="favAccountGroup" style="display:none;">
+                    <label>Favorite Account</label>
+                    <select id="favAccountSelect" onchange="applyFavAccount()">
+                        <option value="">-- Choose or Enter Manually below --</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>Receiver Account No.</label>
                     <input type="text" id="accNo" placeholder="Account Number">
@@ -342,7 +353,7 @@
                 document.getElementById('btnManualMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('form-container').style.display = 'block';
-                toggleBankInfo('hide'); // Default collapse when switching to Manual
+                toggleBankInfo('hide'); // Mặc định đóng lại cho gọn
             } else if (mode === 'dashboard') {
                 document.getElementById('btnDashboardMode').classList.add('active');
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
@@ -381,7 +392,7 @@
             document.getElementById('scan-section').style.display = 'none';
             document.getElementById('form-container').style.display = 'block';
             
-            toggleBankInfo('show'); // Expand automatically when scanned to verify details
+            toggleBankInfo('show'); // Tự động mở ra khi quét xong để xác nhận
             updateAccountingMemo();
         }
 
@@ -395,6 +406,17 @@
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
                 
+                // PHỤC HỒI FAVORITE ACCOUNT LOGIC
+                if (data.favAccounts && data.favAccounts.length > 0) {
+                    let favSelect = document.getElementById('favAccountSelect');
+                    data.favAccounts.forEach(acc => {
+                        let displayName = acc.nickName || acc.holderName || acc.accountNo;
+                        let valueData = `${acc.bankCode}|${acc.accountNo}`;
+                        favSelect.innerHTML += `<option value="${valueData}">${displayName} - ${acc.accountNo}</option>`;
+                    });
+                    document.getElementById('favAccountGroup').style.display = 'block';
+                }
+
                 if(data.transactions) {
                     allTransactions = data.transactions;
                     applyDashFilter(); 
@@ -408,6 +430,15 @@
             let s = document.getElementById(id);
             s.innerHTML = `<option value="">-- ${placeholder} --</option>`;
             if(list) list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
+        }
+
+        function applyFavAccount() {
+            let val = document.getElementById('favAccountSelect').value;
+            if (val) {
+                let parts = val.split('|');
+                document.getElementById('bankId').value = parts[0];
+                document.getElementById('accNo').value = parts[1];
+            }
         }
 
         function applyQuickFilter() {
