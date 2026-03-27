@@ -20,8 +20,9 @@
         .main-wrapper { max-width: 600px; margin: 0 auto; width: 100%; }
         h2 { font-size: 24px; font-weight: 700; margin: 20px 0 20px; letter-spacing: -0.5px; }
 
-        .mode-selector { display: flex; gap: 8px; margin-bottom: 24px; }
-        .mode-btn { flex: 1; padding: 16px 5px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 12px; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
+        /* Navigation Tabs */
+        .mode-selector { display: flex; gap: 6px; margin-bottom: 24px; }
+        .mode-btn { flex: 1; padding: 14px 2px; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 10px; font-weight: 700; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;}
         .mode-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #000; }
@@ -32,7 +33,7 @@
 
         .form-group { margin-bottom: 24px; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; color: var(--text-main); }
-        input, select { width: 100%; padding: 18px 16px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; background: var(--card-bg); font-size: 18px !important; font-weight: 500; color: var(--text-main); transition: border-color 0.2s; }
+        input, select { width: 100%; padding: 16px 14px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; background: var(--card-bg); font-size: 16px !important; font-weight: 500; color: var(--text-main); transition: border-color 0.2s; }
         input:focus, select:focus { border-color: var(--focus-ring); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; padding-right: 40px; }
 
@@ -40,6 +41,7 @@
         
         .btn-main { width: 100%; padding: 20px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 16px; }
         .btn-success { background: var(--success-color); }
+        .btn-export { background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
         .btn-text { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 15px; font-weight: 500; margin-top: 20px; cursor: pointer; }
         .btn-copy { padding: 0 20px; background: #e5e7eb; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--text-main); cursor: pointer; white-space: nowrap; }
 
@@ -51,10 +53,8 @@
         .progress-track { background: #e5e7eb; border-radius: 8px; height: 10px; overflow: hidden; }
         .progress-fill { background: var(--primary-color); height: 100%; border-radius: 8px; }
 
-        /* Date Filter UI */
         .date-filter-group { display: flex; gap: 8px; margin-bottom: 16px; align-items: center;}
         .date-filter-group input[type="date"] { padding: 12px; font-size: 14px !important; }
-        .btn-filter { background: var(--primary-color); color: white; border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; white-space: nowrap;}
 
         #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
@@ -72,9 +72,10 @@
         <h2>Payment & Ledger</h2>
 
         <div class="mode-selector">
-            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan QR</button>
+            <button id="btnScanMode" class="mode-btn active" onclick="switchMode('scan')">Scan</button>
             <button id="btnManualMode" class="mode-btn" onclick="switchMode('manual')">Manual</button>
-            <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Dashboard</button>
+            <button id="btnDashboardMode" class="mode-btn" onclick="switchMode('dashboard')">Dash</button>
+            <button id="btnSettingsMode" class="mode-btn" onclick="switchMode('settings')">⚙️ Set</button>
         </div>
         
         <div id="scan-section">
@@ -82,15 +83,40 @@
             <p style="font-weight:500; font-size:16px; margin-top:24px; color: var(--text-muted);">Point camera at QR code</p>
         </div>
 
+        <div id="settings-section" class="container">
+            <h3 class="section-title">Global Settings</h3>
+            <div class="form-group">
+                <label>Timezone (Auto-saved)</label>
+                <select id="tzSelect" onchange="saveTimezone()">
+                    <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (Vietnam)</option>
+                    <option value="America/Chicago">America/Chicago (US Central)</option>
+                </select>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">This timezone will be strictly applied to all Google Sheets records.</p>
+            </div>
+        </div>
+
         <div id="dashboard-section" class="container">
             <h3 class="section-title">Expense Overview</h3>
             
-            <div class="date-filter-group">
+            <div class="form-group">
+                <select id="quickFilter" onchange="applyQuickFilter()">
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="q1">Quarter 1 (Jan - Mar)</option>
+                    <option value="q2">Quarter 2 (Apr - Jun)</option>
+                    <option value="q3">Quarter 3 (Jul - Sep)</option>
+                    <option value="q4">Quarter 4 (Oct - Dec)</option>
+                    <option value="this_year">This Year</option>
+                    <option value="last_year">Last Year</option>
+                    <option value="custom">-- Custom Date Range --</option>
+                </select>
+            </div>
+
+            <div class="date-filter-group" id="customDateGroup" style="display:none;">
                 <input type="date" id="dashStartDate" onchange="applyDashFilter()">
                 <span style="font-weight:bold; color:var(--text-muted);">to</span>
                 <input type="date" id="dashEndDate" onchange="applyDashFilter()">
             </div>
-            <button class="btn-filter" style="width: 100%; margin-bottom: 20px;" onclick="setDashToThisMonth()">Filter: This Month</button>
 
             <div class="dash-card">
                 <p style="margin: 0; font-weight: 600; color: var(--text-muted);">TOTAL EXPENSE</p>
@@ -102,6 +128,8 @@
 
             <h3 class="section-title">By Unit</h3>
             <div id="dashUnitList">Loading...</div>
+
+            <button class="btn-export" onclick="exportToCSV()">📥 Export Filtered Data (CSV)</button>
         </div>
 
         <div id="form-container" class="container">
@@ -155,7 +183,7 @@
 
             <div class="form-group" id="statementPeriodGroup">
                 <label>Statement Period (Optional)</label>
-                <input type="month" id="statementPeriod" style="background: var(--bg-color);">
+                <input type="month" id="statementPeriod">
                 <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">*Applicable for Credit Cards</p>
             </div>
 
@@ -187,14 +215,6 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Timezone Setting</label>
-                <select id="tzSelect" style="background: var(--bg-color);">
-                    <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (Vietnam)</option>
-                    <option value="America/Chicago">America/Chicago (US Central)</option>
-                </select>
-            </div>
-
             <button class="btn-main" id="btnAction" onclick="processAll()">Save & Generate QR</button>
             <button class="btn-text" onclick="location.reload()">Cancel</button>
         </div>
@@ -208,11 +228,12 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyRFQKeSYOQc4SiB2XNAn-DxILnfh3qvKBtRZoJbnPVDvb3NGibqE33Hh3Xf9aHd-Gv/exec"; // INSERT YOUR SCRIPT URL HERE
         let html5QrcodeScanner;
         let currentAppScheme = "none";
         let rawQrText = "MANUAL";
         let allTransactions = []; 
+        let filteredTransactions = []; // Used for export
 
         function formatNumber(n) { return n.toString().replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
@@ -223,16 +244,25 @@
         }
 
         window.onload = function() { 
+            // Load saved timezone
+            let savedTz = localStorage.getItem("app_timezone");
+            if (savedTz) document.getElementById("tzSelect").value = savedTz;
+
             loadData(); 
             initScanner(); 
-            setDashToThisMonth(); 
+            applyQuickFilter(); // Sets default dates to 'This Month'
         };
+
+        function saveTimezone() {
+            localStorage.setItem("app_timezone", document.getElementById("tzSelect").value);
+        }
 
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('scan-section').style.display = 'none';
             document.getElementById('form-container').style.display = 'none';
             document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('settings-section').style.display = 'none';
 
             if (mode === 'manual') {
                 document.getElementById('btnManualMode').classList.add('active');
@@ -244,6 +274,10 @@
                 if (html5QrcodeScanner) html5QrcodeScanner.clear();
                 document.getElementById('dashboard-section').style.display = 'block';
                 applyDashFilter(); 
+            } else if (mode === 'settings') {
+                document.getElementById('btnSettingsMode').classList.add('active');
+                if (html5QrcodeScanner) html5QrcodeScanner.clear();
+                document.getElementById('settings-section').style.display = 'block';
             } else {
                 location.reload(); 
             }
@@ -274,11 +308,8 @@
         function loadData() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             fetch(GAS_URL).then(r => r.json()).then(data => {
-                
-                // POPULATE FROM / TO BANK USING MAINS
                 fill('fromBank', data.mains, "Select Source Bank");
                 fill('toBank', data.mains, "Select Destination Bank");
-                
                 fill('vendorSelect', data.vendors, "Select Vendor");
                 fill('unitSelect', data.units, "Select Unit");
                 fill('categorySelect', data.categories, "Select Category");
@@ -298,21 +329,44 @@
             if(list) list.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`);
         }
 
-        // --- DASHBOARD FILTER LOGIC ---
-        function setDashToThisMonth() {
-            let now = new Date();
-            let firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            let lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        // --- DASHBOARD SMART FILTERS ---
+        function applyQuickFilter() {
+            let val = document.getElementById('quickFilter').value;
+            let customGroup = document.getElementById('customDateGroup');
             
-            // Need formatting due to timezone differences avoiding off-by-one day bugs
+            if (val === 'custom') {
+                customGroup.style.display = 'flex';
+                applyDashFilter();
+                return;
+            } else {
+                customGroup.style.display = 'none';
+            }
+
+            let now = new Date();
+            let y = now.getFullYear();
+            let m = now.getMonth();
+            let start, end;
+
+            switch(val) {
+                case 'this_month': start = new Date(y, m, 1); end = new Date(y, m + 1, 0); break;
+                case 'last_month': start = new Date(y, m - 1, 1); end = new Date(y, m, 0); break;
+                case 'q1': start = new Date(y, 0, 1); end = new Date(y, 3, 0); break;
+                case 'q2': start = new Date(y, 3, 1); end = new Date(y, 6, 0); break;
+                case 'q3': start = new Date(y, 6, 1); end = new Date(y, 9, 0); break;
+                case 'q4': start = new Date(y, 9, 1); end = new Date(y, 12, 0); break;
+                case 'this_year': start = new Date(y, 0, 1); end = new Date(y, 12, 0); break;
+                case 'last_year': start = new Date(y - 1, 0, 1); end = new Date(y - 1, 12, 0); break;
+            }
+
+            // Fix timezone offset for inputs
             const formatDateLocal = (date) => {
                 const offset = date.getTimezoneOffset();
-                date = new Date(date.getTime() - (offset*60*1000));
-                return date.toISOString().split('T')[0];
+                let d = new Date(date.getTime() - (offset*60*1000));
+                return d.toISOString().split('T')[0];
             };
 
-            document.getElementById('dashStartDate').value = formatDateLocal(firstDay);
-            document.getElementById('dashEndDate').value = formatDateLocal(lastDay);
+            document.getElementById('dashStartDate').value = formatDateLocal(start);
+            document.getElementById('dashEndDate').value = formatDateLocal(end);
             applyDashFilter();
         }
 
@@ -325,10 +379,10 @@
             let startTime = startVal ? new Date(startVal).setHours(0,0,0,0) : 0;
             let endTime = endVal ? new Date(endVal).setHours(23,59,59,999) : new Date().getTime();
 
-            let filtered = allTransactions.filter(t => t.date >= startTime && t.date <= endTime);
+            filteredTransactions = allTransactions.filter(t => t.date >= startTime && t.date <= endTime);
 
             let dashData = { totalExpense: 0, categories: {}, units: {} };
-            filtered.forEach(t => {
+            filteredTransactions.forEach(t => {
                 dashData.totalExpense += t.amount;
                 dashData.categories[t.category] = (dashData.categories[t.category] || 0) + t.amount;
                 dashData.units[t.unit] = (dashData.units[t.unit] || 0) + t.amount;
@@ -341,9 +395,8 @@
             document.getElementById('dashTotalValue').innerText = formatNumber(dashData.totalExpense);
             
             function generateBars(dataObj) {
-                if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data</p>";
+                if (Object.keys(dataObj).length === 0) return "<p style='color:var(--text-muted); font-size:14px;'>No data in range</p>";
                 let html = "";
-                // Sort by highest value
                 let sortedEntries = Object.entries(dataObj).sort((a,b) => b[1] - a[1]);
                 
                 for (let [name, val] of sortedEntries) {
@@ -359,6 +412,31 @@
             
             document.getElementById('dashCategoryList').innerHTML = generateBars(dashData.categories);
             document.getElementById('dashUnitList').innerHTML = generateBars(dashData.units);
+        }
+
+        // --- EXPORT TO CSV ---
+        function exportToCSV() {
+            if (filteredTransactions.length === 0) {
+                alert("No data available to export for this period.");
+                return;
+            }
+            
+            // BOM needed for Excel to read UTF-8 correctly
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Date,Amount,Unit,Category\n";
+            
+            filteredTransactions.forEach(t => {
+                let d = new Date(t.date).toLocaleDateString(); // Format based on phone locale
+                csvContent += `"${d}","${t.amount}","${t.unit}","${t.category}"\n`;
+            });
+            
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Ledger_Export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // --- FORM LOGIC ---
@@ -416,7 +494,7 @@
                 unit: document.getElementById('unitSelect').value,
                 category: document.getElementById('categorySelect').value,
                 accountingMemo: document.getElementById('accountingMemo').value,
-                timezone: document.getElementById('tzSelect').value, // PASSING TIMEZONE
+                timezone: document.getElementById('tzSelect').value, // Send Timezone from settings
                 rawText: rawQrText
             };
 
