@@ -622,15 +622,13 @@
                 timezone: document.getElementById('tzSelect').value || "Asia/Ho_Chi_Minh"
             };
 
-            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) })
-            .then(() => {
+            fetch(GASURL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }).then(() => {
                 document.getElementById('loadingOverlay').style.display = 'none';
                 alert("Loan recorded successfully!");
                 location.reload();
-            })
-            .catch(err => {
+            }).catch(function(err) {
                 document.getElementById('loadingOverlay').style.display = 'none';
-                alert("Loan recorded but there was a connection delay. " + err.message);
+                alert("Loan recorded but there was a connection delay.");
                 location.reload();
             });
         }
@@ -696,38 +694,36 @@
 
             currentAppScheme = document.getElementById('appSelect').value;
 
-            // Xử lý gửi dữ liệu và load QR an toàn
             fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }).then(() => {
                 if (data.bankId && data.accountNo) {
                     let qrUrl = `https://img.vietqr.io/image/${data.bankId}-${data.accountNo}-compact2.png?amount=${data.amount}&addInfo=${encodeURIComponent(data.transferMemo)}`;
-                    let img = new Image();
 
-                    img.onload = () => {
+                    let img = new Image();
+                    img.onload = function() {
                         document.getElementById('finalQrImg').src = qrUrl;
-                        document.getElementById('finalQrImg').style.display = 'block';
-                        showSuccess();
+                        document.getElementById('form-container').style.display = 'none';
+                        document.getElementById('result-container').style.display = 'block';
+                        document.getElementById('loadingOverlay').style.display = 'none';
                     };
 
-                    img.onerror = () => {
+                    img.onerror = function() {
                         document.getElementById('finalQrImg').style.display = 'none';
-                        showSuccess();
+                        document.getElementById('form-container').style.display = 'none';
+                        document.getElementById('result-container').style.display = 'block';
+                        document.getElementById('loadingOverlay').style.display = 'none';
                     };
 
                     img.src = qrUrl;
                 } else {
                     document.getElementById('finalQrImg').style.display = 'none';
-                    showSuccess();
+                    document.getElementById('form-container').style.display = 'none';
+                    document.getElementById('result-container').style.display = 'block';
+                    document.getElementById('loadingOverlay').style.display = 'none';
                 }
-            }).catch(err => {
-                document.getElementById('finalQrImg').style.display = 'none';
-                showSuccess();
-            });
-
-            function showSuccess() {
-                document.getElementById('form-container').style.display = 'none';
-                document.getElementById('result-container').style.display = 'block';
+            }).catch(function(err) {
                 document.getElementById('loadingOverlay').style.display = 'none';
-            }
+                alert("Đã lưu dữ liệu nhưng có lỗi hiển thị kết quả.");
+            });
         }
 
         function openBankApp() { if (currentAppScheme !== "none") window.location.href = currentAppScheme; }
